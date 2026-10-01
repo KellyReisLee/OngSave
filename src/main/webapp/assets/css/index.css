@@ -1,0 +1,277 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+/* ===== Animações e Efeitos ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatY {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 4px 24px rgba(255, 107, 0, 0.12), 0 0 60px rgba(255, 107, 0, 0.06);
+  }
+
+  50% {
+    box-shadow: 0 8px 36px rgba(255, 107, 0, 0.22), 0 0 90px rgba(255, 107, 0, 0.1);
+  }
+}
+
+@keyframes tickerScroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* NOVO: Animação de mudança fluida de cores para textos ou elementos */
+@keyframes colorShift {
+  0% {
+    color: #f97316;
+    /* Laranja forte */
+  }
+
+  33% {
+    color: #10b981;
+    /* Verde esmeralda (ESG) */
+  }
+
+  66% {
+    color: #3b82f6;
+    /* Azul sustentável */
+  }
+
+  100% {
+    color: #f97316;
+    /* Retorna ao laranja */
+  }
+}
+
+/* NOVO: Gradiente dinâmico em movimento para textos (Shimmer Colorido) */
+@keyframes shimmerGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-float {
+  animation: floatY 6s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Classe aplicada para mudar cores dinamicamente */
+.text-shimmer {
+  background: linear-gradient(270deg, #f97316, #10b981, #3b82f6, #f97316);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerGradient 6s ease infinite;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(226, 232, 240, 0.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226, 232, 240, 0.6) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+/* Secção de Módulos (Branco puro) */
+#features {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+/* Secção de Impacto (Apenas degradê suave de cores) */
+#impact {
+  position: relative;
+  background-color: #f8fafc !important;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255, 138, 76, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 40%) !important;
+}
+
+/* ===== ESTILO COMPLETO DO FOOTER (Laranja Escuro) ===== */
+footer {
+  background: linear-gradient(135deg, #c2410c 0%, #9a3412 100%) !important;
+  color: #ffffff !important;
+  position: relative;
+  width: 100vw !important;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding-left: calc(50vw - 50%);
+  padding-right: calc(50vw - 50%);
+}
+
+footer h3,
+footer h4,
+footer p,
+footer span,
+footer a {
+  color: #ffffff !important;
+}
+
+footer p:not(.font-bold),
+footer .text-slate-500,
+footer .text-gray-500,
+footer .text-slate-600 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+footer a:hover {
+  color: #ffedd5 !important;
+  text-decoration: underline;
+}
+
+footer svg {
+  color: #ffffff !important;
+}
+
+footer hr,
+footer .border-t,
+footer .border-slate-200,
+footer .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+footer .rounded-xl.bg-orange-600,
+footer .rounded-lg.bg-orange-600,
+footer div[class*="bg-orange-"],
+footer div[class*="bg-emerald-"] {
+  background-color: #ffffff !important;
+  color: #c2410c !important;
+}
+
+footer div[class*="bg-orange-"] svg,
+footer div[class*="bg-emerald-"] svg {
+  color: #c2410c !important;
+}
+
+footer .bg-emerald-50,
+footer .bg-emerald-100,
+footer .bg-orange-50,
+footer .bg-orange-100 {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Ticker Marquee */
+.ticker-track {
+  animation: tickerScroll 30s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff6b00;
+  border-radius: 4px;
+}
+
+.animate-step-1 {
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+
+.animate-step-2 {
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+.animate-step-3 {
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+.animate-step-4 {
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.7s;
+  opacity: 0;
+}

@@ -1,0 +1,44 @@
+/* OngSave · estilos compartilhados do painel da empresa (complementam o Tailwind) */
+body { font-family: 'Inter', sans-serif; }
+
+.card { background: #fff; border: 1px solid rgb(226 232 240 / .8); border-radius: 1.5rem; }
+
+/* Carregamento */
+.skel { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%); background-size: 400% 100%; animation: shimmer 1.2s infinite; color: transparent !important; border-radius: .5rem; }
+@keyframes shimmer { 0% { background-position: 100% 50% } 100% { background-position: 0 50% } }
+
+/* Filtros em forma de pílula */
+.chip[aria-pressed="true"] { background: #ea580c; border-color: #ea580c; color: #fff; }
+
+/* Marcadores do mapa */
+.pin { width: 16px; height: 16px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 5px rgb(0 0 0 / .45); }
+.pulso { animation: pulso 1.8s infinite; }
+@keyframes pulso { 0% { box-shadow: 0 0 0 0 rgb(249 115 22 / .55) } 70%, 100% { box-shadow: 0 0 0 14px rgb(249 115 22 / 0) } }
+
+/* Formulários */
+.rotulo { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748b; }
+.campo { display: block; width: 100%; margin-top: .35rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .75rem; padding: .65rem .85rem; font-size: .875rem; font-weight: 500; color: #1e293b; text-transform: none; letter-spacing: 0; transition: border-color .15s, background .15s; }
+.campo:focus { outline: 2px solid #fdba74; border-color: #f97316; background: #fff; }
+.campo[readonly] { background: #f1f5f9; color: #64748b; }
+.campo.invalido { border-color: #ef4444; background: #fef2f2; }
+.msg-erro { color: #dc2626; font-size: .75rem; margin-top: .25rem; }
+.msg-erro:empty { display: none; }
+
+.btn-lar { display: inline-block; text-align: center; background: #ea580c; color: #fff; font-weight: 700; font-size: .875rem; border-radius: .9rem; padding: .75rem 1.4rem; box-shadow: 0 8px 18px rgb(234 88 12 / .2); transition: background .15s; }
+.btn-lar:hover { background: #c2410c; }
+.btn-lar:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.btn-sec { display: inline-block; background: #f1f5f9; color: #334155; font-weight: 700; font-size: .875rem; border-radius: .9rem; padding: .75rem 1.2rem; transition: background .15s; }
+.btn-sec:hover { background: #e2e8f0; }
+.btn-sec:disabled { opacity: .5; cursor: not-allowed; }
+:focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+
+/* Impressão / PDF */
+@media print {
+  #menu, #veu-menu, header, footer, #toast, .no-print { display: none !important; }
+  body { background: #fff; display: block; }
+  main { display: block; }
+  .card { box-shadow: none; break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

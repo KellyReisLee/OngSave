@@ -1,0 +1,12 @@
+Bibliotecas que o Tomcat 10.1 NÃO traz e que esta pasta precisa de ter:
+
+  postgresql-42.7.13.jar                     driver JDBC do PostgreSQL / Neon
+  jakarta.servlet.jsp.jstl-api-3.0.1.jar    JSTL 3.0 (API)
+  jakarta.servlet.jsp.jstl-3.0.1.jar        JSTL 3.0 (implementação GlassFish)
+
+Forma rápida: execute baixar-libs.bat (Windows) ou baixar-libs.sh (Linux/macOS) na raiz do projeto.
+Manual: https://repo1.maven.org/maven2/ (caminhos dentro dos scripts).
+
+Sem o driver, a aplicação abre uma página a explicar que ele falta.
+Sem a JSTL, as JSPs falham com "Cannot find the tag library descriptor for jakarta.tags.core".
+No Eclipse, depois de copiar: botão direito no projeto > Refresh (F5).

@@ -1,0 +1,57 @@
+# =====================================================================
+#  OngSave · configuração
+#  O ÚNICO campo obrigatório é db.url. Tudo o resto já tem um valor padrão.
+#  (Variáveis de ambiente têm prioridade: DATABASE_URL, DB_USUARIO, DB_SENHA,
+#   ONGSAVE_APP_DADOSDEMO, ONGSAVE_GEO_VALIDARPROXIMIDADE ...)
+#  NÃO faça commit deste ficheiro com a senha real (está no .gitignore).
+# =====================================================================
+
+# --- Banco de dados (Neon) -------------------------------------------
+# No painel do Neon: Connect > copie a "connection string" e cole abaixo, tal como vem:
+#   db.url=postgresql://neondb_owner:SENHA@ep-xxxx-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+# Também aceita jdbc:postgresql://... (nesse caso preencha db.usuario e db.senha).
+db.url=
+
+# Só se a senha tiver caracteres especiais que estraguem a URL (ou se usar jdbc:):
+db.usuario=
+db.senha=
+
+# Conexões simultâneas (o plano gratuito do Neon aceita bem 5 a 10).
+db.pool.maximo=10
+
+# --- Aplicação --------------------------------------------------------
+# true  = na primeira execução cria empresas, motoristas, ONGs e lotes de demonstração (senha ongsave123).
+# false = cria só as tabelas e a conta admin@ongsave.com. Use false em produção.
+# (Só tem efeito na PRIMEIRA execução contra um banco vazio.)
+app.dadosDemo=true
+
+# Senha do administrador. Se preenchida (mín. 8 caracteres), substitui a senha inicial "ongsave123"
+# de admin@ongsave.com no arranque. Recomendado em produção.
+app.adminSenha=
+
+# --- Geolocalização ---------------------------------------------------
+# true  = o servidor exige que o motorista esteja a menos de geo.raioValidacaoMetros da empresa/ONG
+#         para confirmar coleta e entrega, e filtra ofertas pelo raio da plataforma.
+# false = sem exigência de proximidade (útil para testar fora de São Paulo). Use true em produção.
+geo.validarProximidade=false
+geo.raioValidacaoMetros=150
+
+# Converte o endereço (perfil) em coordenadas pelo OpenStreetMap/Nominatim.
+geo.geocodificar=true
+
+# --- Modo simulação (apresentações) -----------------------------------
+# true  = o servidor simula o GPS e uma pequena frota de motoristas: os lotes são publicados, aceites,
+#         recolhidos e entregues sozinhos, e os mapas da empresa, da ONG, do motorista e do admin mostram
+#         os veículos a andar pelas ruas em tempo real. Tudo passa pelas regras e pelo banco reais.
+#         O motorista de sim.contasManuais só anda quando clica em "Simular trajeto" na Rota Ativa.
+# false = funcionamento real: as posições vêm do GPS do celular do motorista. Use false em produção.
+app.simulacao=false
+
+# Duração média de cada trecho (até a empresa e até a ONG), em segundos.
+sim.segundosPorTrecho=60
+# Quantas entregas automáticas ficam em andamento ao mesmo tempo (0 = só o apresentador).
+sim.frota=2
+# Atualização dos painéis no modo simulação (milissegundos).
+sim.intervaloMs=3000
+# Motoristas conduzidos à mão na apresentação (separe por vírgula). Os outros motoristas ativos são automáticos.
+sim.contasManuais=motorista@ongsave.com

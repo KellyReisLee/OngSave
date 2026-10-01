@@ -1,0 +1,13 @@
+.git
+.metadata
+.settings
+.classpath
+.project
+build
+bin
+target
+__MACOSX
+**/.DS_Store
+*.log
+Dockerfile
+.dockerignore

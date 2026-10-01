@@ -1,0 +1,5 @@
+<%--
+  Estado inicial do painel, gerado pelo FrontController a partir do banco (atributo "dadosJson").
+  O JSON já vem com < > & ' escapados (br.com.ongsave.util.Json), por isso é seguro dentro do <script>.
+  Lido por assets/js/plataforma.js (constantes OS e OS_ESTADO).
+--%><script id="os-dados" type="application/json">${dadosJson}</script>

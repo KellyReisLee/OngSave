@@ -1,0 +1,5 @@
+<%--
+  Cabeçalho comum a TODAS as JSPs (incluído estaticamente na primeira linha).
+  Tomcat 10.1+ / Jakarta EE: URIs "jakarta.tags.*" (JSTL 3.0).
+  Tomcat 9 / javax: troque por http://java.sun.com/jsp/jstl/core e .../functions.
+--%><%@ page contentType="text/html; charset=UTF-8" trimDirectiveWhitespaces="true" %><%@ taglib prefix="c" uri="jakarta.tags.core" %><%@ taglib prefix="fn" uri="jakarta.tags.functions" %><c:set var="ctx" value="${pageContext.request.contextPath}" scope="request" />

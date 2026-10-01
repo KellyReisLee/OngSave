@@ -1,0 +1,90 @@
+/* =================================================================ato
+   GLOBAL CSS - OngSave (Padrão Corporativo & Ciclo Orgânico)
+   ================================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variáveis Globais de Cores e Padrões */
+:root {
+  --primary-orange-gradient: linear-gradient(135deg, #b9380a 0%, #7c2d12 100%);
+  --card-bg-translucent: rgba(124, 45, 18, 0.45);
+  --card-bg-hover: #7c2d12;
+  --border-orange-subtle: rgba(251, 146, 60, 0.3);
+}
+
+/* Corpo e Configurações Base da Página */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #7c2d12;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+/* =================================================================
+   ANIMAÇÕES DE ENTRADA EM CASCATA (SCROLL TRIGGER)
+   ================================================================ */
+
+.cycle-card {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.cycle-card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Delays escalonados automáticos para os cartões do ciclo */
+.cycle-card:nth-child(1) {
+  transition-delay: 100ms;
+}
+
+.cycle-card:nth-child(2) {
+  transition-delay: 300ms;
+}
+
+.cycle-card:nth-child(3) {
+  transition-delay: 500ms;
+}
+
+.cycle-card:nth-child(4) {
+  transition-delay: 700ms;
+}
+
+/* =================================================================
+   ESTILOS COMPONENTIZADOS DOS CARTÕES DO CICLO
+   ================================================================ */
+
+.cycle-card-container {
+  background-color: var(--card-bg-translucent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-orange-subtle);
+}
+
+.cycle-card-container:hover {
+  background-color: var(--card-bg-hover);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-12px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+}
+
+/* Ícones internos dos cartões */
+.cycle-icon-box {
+  background-color: rgba(67, 20, 7, 0.6);
+  color: #fed7aa;
+  transition: all 0.3s ease;
+}
+
+.cycle-card-container:hover .cycle-icon-box {
+  background-color: #ea580c;
+  color: #ffffff;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}

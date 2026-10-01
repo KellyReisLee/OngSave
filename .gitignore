@@ -1,0 +1,11 @@
+build/
+.metadata/
+*.class
+target/
+__MACOSX/
+.DS_Store
+bin/
+*.log
+
+# Credenciais do banco: nunca versionar (no servidor use a variável de ambiente DATABASE_URL)
+src/main/webapp/WEB-INF/ongsave.properties
