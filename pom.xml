@@ -75,7 +75,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
-        <version>3.4.0</version>
+        <version>3.5.1</version>
         <configuration>
           <!-- JARs copiados à mão para o Eclipse: no WAR ficam só os das dependências acima (evita duplicados) -->
           <warSourceExcludes>WEB-INF/lib/*.jar,WEB-INF/lib/LEIA-ME.txt</warSourceExcludes>
