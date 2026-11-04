@@ -46,6 +46,7 @@ public class Inicializador implements ServletContextListener {
 
     private ScheduledExecutorService agenda;
     private br.com.ongsave.service.Simulador simulador;
+    private Servicos servicosAtivos;
 
     @Override
     public void contextInitialized(ServletContextEvent e) {
@@ -89,6 +90,8 @@ public class Inicializador implements ServletContextListener {
         trocarSenhaAdminInicial(cfg);
         Servicos servicos = new Servicos(cfg);
         ctx.setAttribute(Servicos.ATRIBUTO, servicos);
+        servicosAtivos = servicos;
+        avisosDeSeguranca(cfg, servicos);
         ctx.removeAttribute(ERRO);
         if (servicos.simulador != null) {
             simulador = servicos.simulador;
@@ -113,6 +116,7 @@ public class Inicializador implements ServletContextListener {
                 // Posições GPS só servem durante a entrega e para auditoria recente.
                 new PosicaoDAO().apagarAntigas(c, 90);
                 new NotificacaoDAO().apagarLidasAntigas(c, 180);
+                new br.com.ongsave.dao.SenhaTokenDAO().apagarAntigos(c);
                 return null;
             });
         } catch (RuntimeException ex) {
@@ -146,6 +150,7 @@ public class Inicializador implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent e) {
         if (agenda != null) agenda.shutdownNow();
         if (simulador != null) simulador.parar();
+        if (servicosAtivos != null) servicosAtivos.emails.parar();
         Banco.parar();
         // Evita fuga de memória no redeploy do Tomcat: remove os drivers carregados por esta aplicação.
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -156,6 +161,18 @@ public class Inicializador implements ServletContextListener {
                 try { DriverManager.deregisterDriver(d); } catch (SQLException ex) { /* ignora */ }
             }
         }
+    }
+
+    /** Avisos no log quando a configuração não é própria para produção. */
+    private static void avisosDeSeguranca(Configuracao cfg, Servicos s) {
+        if (cfg.demo())
+            LOG.warning("OngSave: MODO DEMONSTRAÇÃO LIGADO (app.demo=true). A página /demo entra sem senha em todas as contas "
+                    + "de demonstração, inclusive a do administrador. Use app.demo=false em produção.");
+        if (!s.emails.configurado())
+            LOG.warning("OngSave: e-mail não configurado (mail.brevoApiKey / mail.remetente). Os links de recuperação de senha "
+                    + "vão só para este log.");
+        if (s.emails.configurado() && cfg.urlPublica().isEmpty())
+            LOG.warning("OngSave: defina app.urlPublica: sem ele os links de recuperação de senha não são enviados.");
     }
 
     private static void falhar(ServletContext ctx, String msg, Throwable causa) {

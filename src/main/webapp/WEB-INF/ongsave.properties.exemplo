@@ -29,6 +29,23 @@ app.dadosDemo=true
 # de admin@ongsave.com no arranque. Recomendado em produção.
 app.adminSenha=
 
+# Página pública /demo ("Ver demonstrativo" na página inicial): cada cartão entra sem senha no painel
+# da conta de demonstração do perfil (empresa, ONG, motorista, admin) e LIGA o modo simulação.
+# Use false em produção (desliga a página e, salvo app.simulacao=true, a simulação).
+app.demo=true
+
+# Endereço público da aplicação, sem barra no fim. Usado nos links enviados por e-mail.
+# Ex.: http://localhost:8080/ongsave (Eclipse) ou https://ongsave.onrender.com (produção).
+app.urlPublica=
+
+# --- E-mail (recuperação de senha) ------------------------------------
+# Envio pela API da Brevo (gratuito até 300 e-mails/dia): crie a conta em brevo.com, verifique o e-mail
+# remetente em Senders e gere uma chave em SMTP & API > API Keys.
+# Sem chave, os links de recuperação aparecem só no log do Tomcat (bom para testar no Eclipse).
+mail.brevoApiKey=
+mail.remetente=
+mail.nomeRemetente=OngSave
+
 # --- Geolocalização ---------------------------------------------------
 # true  = o servidor exige que o motorista esteja a menos de geo.raioValidacaoMetros da empresa/ONG
 #         para confirmar coleta e entrega, e filtra ofertas pelo raio da plataforma.
@@ -45,7 +62,8 @@ geo.geocodificar=true
 #         os veículos a andar pelas ruas em tempo real. Tudo passa pelas regras e pelo banco reais.
 #         O motorista de sim.contasManuais só anda quando clica em "Simular trajeto" na Rota Ativa.
 # false = funcionamento real: as posições vêm do GPS do celular do motorista. Use false em produção.
-app.simulacao=false
+# (Com app.demo=true a simulação fica sempre ligada.)
+app.simulacao=true
 
 # Duração média de cada trecho (até a empresa e até a ONG), em segundos.
 sim.segundosPorTrecho=60

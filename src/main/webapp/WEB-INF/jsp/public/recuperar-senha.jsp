@@ -1,10 +1,11 @@
 <%@ include file="/WEB-INF/jspf/taglibs.jspf" %>
 <%--
-  Recuperar senha (sem e-mail nem código).
-  GET  /recuperar-senha        -> formulário
-  POST /recuperar-senha        -> FrontController.recuperarSenha()
-       erro  -> volta aqui com ${erro} (caixa vermelha)
-       ok    -> redireciona para /recuperar-senha?ok=1 (caixa verde + contagem até o login)
+  Recuperar senha por link enviado ao e-mail (token de uso único, 30 min).
+  GET  /recuperar-senha                 -> pede o e-mail
+  POST /recuperar-senha (email)         -> envia o link e redireciona para ?enviado=1 (mesma mensagem exista ou não a conta)
+  GET  /recuperar-senha?token=...       -> formulário da nova senha (ou aviso de link inválido)
+  POST /recuperar-senha (token + senha) -> grava e redireciona para ?ok=1 (caixa verde + contagem até o login)
+       erro -> volta aqui com ${erro} (caixa vermelha)
 --%>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -37,55 +38,89 @@
       <span class="text-xl font-extrabold tracking-tight">Ong<span style="color:#ea580c;">Save</span></span>
     </a>
 
-    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Criar uma nova senha</h1>
-    <p class="text-sm text-slate-500 mt-2 mb-6">Confirme a sua conta e escolha a nova senha. Depois é só entrar.</p>
+    <c:choose>
+      <%-- ===== Passo 2: veio do link do e-mail ===== --%>
+      <c:when test="${not empty param.token and tokenValido}">
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Criar uma nova senha</h1>
+        <p class="text-sm text-slate-500 mt-2 mb-6">Escolha a nova senha da sua conta. O link só pode ser usado uma vez.</p>
 
-    <form id="form-senha" action="${ctx}/recuperar-senha" method="post" class="space-y-4" novalidate>
-      <input type="hidden" name="csrf" value="${sessionScope.csrfToken}">
+        <form id="form-senha" action="${ctx}/recuperar-senha" method="post" class="space-y-4" novalidate>
+          <input type="hidden" name="csrf" value="${sessionScope.csrfToken}">
+          <input type="hidden" name="token" value="${fn:escapeXml(param.token)}">
 
-      <div>
-        <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">E-mail da conta</label>
-        <input type="email" id="email" name="email" required autocomplete="username"
-               value="${fn:escapeXml(param.email)}" placeholder="voce@exemplo.com"
-               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
-      </div>
+          <div>
+            <label for="senha" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Nova senha</label>
+            <div class="relative">
+              <input type="password" id="senha" name="senha" required minlength="8" maxlength="128" autocomplete="new-password"
+                     placeholder="Mínimo 8 caracteres" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 pr-11">
+              <button type="button" data-alternar="senha" aria-label="Mostrar senha"
+                      class="absolute inset-y-0 right-0 px-4 text-slate-400 hover:text-orange-600"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
 
-      <div>
-        <label for="verificacao" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">CPF/CNPJ ou telefone cadastrado</label>
-        <input type="text" id="verificacao" name="verificacao" required inputmode="numeric" autocomplete="off"
-               value="${fn:escapeXml(param.verificacao)}" placeholder="Só para confirmar que a conta é sua"
-               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
-      </div>
+          <div>
+            <label for="confirmacao" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Confirmar nova senha</label>
+            <div class="relative">
+              <input type="password" id="confirmacao" name="confirmacao" required minlength="8" maxlength="128" autocomplete="new-password"
+                     placeholder="Repita a senha" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 pr-11">
+              <button type="button" data-alternar="confirmacao" aria-label="Mostrar senha"
+                      class="absolute inset-y-0 right-0 px-4 text-slate-400 hover:text-orange-600"><i class="fa-solid fa-eye"></i></button>
+            </div>
+            <p id="aviso-local" class="hidden text-xs font-medium text-red-600 mt-2"></p>
+          </div>
 
-      <div>
-        <label for="senha" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Nova senha</label>
-        <div class="relative">
-          <input type="password" id="senha" name="senha" required minlength="8" maxlength="128" autocomplete="new-password"
-                 placeholder="Mínimo 8 caracteres"
-                 class="w-full pl-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
-          <button type="button" data-alternar="senha" aria-label="Mostrar senha"
-                  class="absolute inset-y-0 right-0 px-4 text-slate-400 hover:text-orange-600"><i class="fa-solid fa-eye"></i></button>
+          <button type="submit" id="btn-enviar"
+                  class="w-full py-3.5 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2 disabled:opacity-60"
+                  style="background: linear-gradient(135deg, #f97316, #ea580c);">
+            <i class="fa-solid fa-key"></i> <span>Gravar nova senha</span>
+          </button>
+        </form>
+      </c:when>
+
+      <%-- ===== Link vencido, já usado ou adulterado ===== --%>
+      <c:when test="${not empty param.token}">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4">
+          <i class="fa-solid fa-link-slash"></i>
         </div>
-      </div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Este link já não é válido</h1>
+        <p class="text-sm text-slate-500 mt-2 mb-6">Os links de recuperação valem 30 minutos e só podem ser usados uma vez. Peça um novo abaixo.</p>
+        <a href="${ctx}/recuperar-senha" class="w-full py-3.5 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2"
+           style="background: linear-gradient(135deg, #f97316, #ea580c);"><i class="fa-solid fa-paper-plane"></i> Pedir novo link</a>
+      </c:when>
 
-      <div>
-        <label for="confirmacao" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Confirmar nova senha</label>
-        <div class="relative">
-          <input type="password" id="confirmacao" name="confirmacao" required minlength="8" maxlength="128" autocomplete="new-password"
-                 placeholder="Repita a senha"
-                 class="w-full pl-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
-          <button type="button" data-alternar="confirmacao" aria-label="Mostrar senha"
-                  class="absolute inset-y-0 right-0 px-4 text-slate-400 hover:text-orange-600"><i class="fa-solid fa-eye"></i></button>
+      <%-- ===== E-mail enviado (mesma mensagem exista ou não a conta) ===== --%>
+      <c:when test="${param.enviado == '1'}">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-4">
+          <i class="fa-solid fa-envelope-circle-check"></i>
         </div>
-        <p id="aviso-local" class="hidden text-xs font-medium text-red-600 mt-2"></p>
-      </div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Verifique o seu e-mail</h1>
+        <p class="text-sm text-slate-500 mt-2">Se existir uma conta ativa com esse e-mail, enviámos um link para criar a nova senha.
+          Ele vale <b>30 minutos</b> e só pode ser usado uma vez.</p>
+        <p class="text-xs text-slate-400 mt-4">Não chegou? Veja a pasta de spam ou peça de novo daqui a alguns minutos.</p>
+        <a href="${ctx}/recuperar-senha" class="mt-6 w-full py-3 rounded-2xl border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rotate-right"></i> Enviar para outro e-mail</a>
+      </c:when>
 
-      <button type="submit" id="btn-enviar"
-              class="w-full py-3.5 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2 disabled:opacity-60"
-              style="background: linear-gradient(135deg, #f97316, #ea580c);">
-        <i class="fa-solid fa-key"></i> <span>Atualizar senha</span>
-      </button>
-    </form>
+      <%-- ===== Passo 1: pedir o link ===== --%>
+      <c:otherwise>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Recuperar o acesso</h1>
+        <p class="text-sm text-slate-500 mt-2 mb-6">Informe o e-mail da conta. Vamos enviar um link seguro para criar uma nova senha.</p>
+
+        <form id="form-pedido" action="${ctx}/recuperar-senha" method="post" class="space-y-4">
+          <input type="hidden" name="csrf" value="${sessionScope.csrfToken}">
+          <div>
+            <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">E-mail da conta</label>
+            <input type="email" id="email" name="email" required maxlength="160" autocomplete="username"
+                   value="${fn:escapeXml(param.email)}" placeholder="voce@exemplo.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
+          </div>
+          <button type="submit"
+                  class="w-full py-3.5 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2"
+                  style="background: linear-gradient(135deg, #f97316, #ea580c);">
+            <i class="fa-solid fa-paper-plane"></i> <span>Enviar link de recuperação</span>
+          </button>
+        </form>
+      </c:otherwise>
+    </c:choose>
 
     <p class="text-center text-sm text-slate-500 mt-6">
       Lembrou-se? <a href="${ctx}/login" class="font-bold text-orange-600 hover:underline">Voltar ao login</a>
@@ -125,7 +160,7 @@
         <div class="w-16 h-16 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center text-3xl mb-4">
           <i class="fa-solid fa-circle-xmark"></i>
         </div>
-        <h2 id="titulo-erro" class="text-xl font-extrabold text-slate-900">Não foi possível alterar a senha</h2>
+        <h2 id="titulo-erro" class="text-xl font-extrabold text-slate-900">Não foi possível concluir</h2>
         <p class="text-sm text-red-700 mt-2"><c:out value="${erro}"/></p>
         <div class="mt-6 grid grid-cols-2 gap-3">
           <button type="button" onclick="document.getElementById('caixa-erro').remove()"
@@ -149,15 +184,13 @@
     });
 
     // Validação rápida no navegador (o servidor valida tudo de novo)
-    document.getElementById('form-senha').addEventListener('submit', function (e) {
+    const formSenha = document.getElementById('form-senha');
+    if (formSenha) formSenha.addEventListener('submit', function (e) {
       const aviso = document.getElementById('aviso-local');
-      const email = document.getElementById('email').value.trim();
-      const verif = document.getElementById('verificacao').value.replace(/\D/g, '');
       const s1 = document.getElementById('senha').value;
       const s2 = document.getElementById('confirmacao').value;
       let msg = '';
-      if (!email || !verif) msg = 'Preencha o e-mail e o CPF/CNPJ (ou telefone).';
-      else if (s1.length < 8) msg = 'A nova senha precisa de pelo menos 8 caracteres.';
+      if (s1.length < 8) msg = 'A nova senha precisa de pelo menos 8 caracteres.';
       else if (s1 !== s2) msg = 'As senhas não coincidem.';
       if (msg) {
         e.preventDefault();

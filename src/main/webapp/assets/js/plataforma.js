@@ -127,3 +127,13 @@ if (OS_SIM.ativo && document.body) {
   b.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgb(34 197 94/.3)"></span>Modo demonstração · GPS simulado';
   document.body.appendChild(b);
 }
+
+/* Entrou pela página /demo: atalho fixo para voltar aos cartões e abrir outro perfil. */
+if (OS.demo && document.body) {
+  const a = document.createElement('a');
+  a.href = OS_BASE + '/demo';
+  a.title = 'Voltar à página do demonstrativo para abrir outro perfil';
+  a.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2000;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font:700 12px/1.2 Inter,system-ui,sans-serif;padding:9px 14px;border-radius:999px;box-shadow:0 8px 20px -6px rgb(234 88 12/.6);display:flex;align-items:center;gap:7px;text-decoration:none';
+  a.innerHTML = '<i class="fa-solid fa-table-cells-large"></i>Outros perfis';
+  document.body.appendChild(a);
+}

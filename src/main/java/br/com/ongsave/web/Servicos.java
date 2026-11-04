@@ -4,6 +4,7 @@ import br.com.ongsave.config.Configuracao;
 import br.com.ongsave.service.AdminService;
 import br.com.ongsave.service.AuditoriaService;
 import br.com.ongsave.service.AutenticacaoService;
+import br.com.ongsave.service.EmailService;
 import br.com.ongsave.service.EmpresaService;
 import br.com.ongsave.service.Geocodificador;
 import br.com.ongsave.service.MotoristaService;
@@ -27,6 +28,7 @@ public final class Servicos {
     public final MotoristaService motorista;
     public final OngService ong;
     public final AdminService admin;
+    public final EmailService emails;
     /** {@code null} quando app.simulacao=false. */
     public final Simulador simulador;
 
@@ -40,6 +42,7 @@ public final class Servicos {
                 config.simulacao());
         ong = new OngService(plataforma, notificacoes, auditoria, geo, config.geoValidar(), config.simulacao());
         admin = new AdminService(plataforma, notificacoes, auditoria);
+        emails = new EmailService(config.mailBrevoApiKey(), config.mailRemetente(), config.mailNomeRemetente());
         simulador = config.simulacao()
                 ? new Simulador(empresa, motorista, ong, config.simSegundosTrecho(), config.simFrota(), config.simContasManuais())
                 : null;

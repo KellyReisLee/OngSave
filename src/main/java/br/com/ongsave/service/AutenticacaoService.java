@@ -11,6 +11,7 @@ import java.util.Map;
 import br.com.ongsave.dao.DocumentoDAO;
 import br.com.ongsave.dao.EmpresaDAO;
 import br.com.ongsave.dao.MotoristaDAO;
+import br.com.ongsave.dao.SenhaTokenDAO;
 import br.com.ongsave.dao.OngDAO;
 import br.com.ongsave.dao.UsuarioDAO;
 import br.com.ongsave.db.Banco;
@@ -84,8 +85,30 @@ public class AutenticacaoService {
             };
             if (erroStatus != null) return new Resultado(null, erroStatus);
 
+            // Hash antigo (menos iterações): atualiza de forma transparente, já que temos a senha correta em mãos.
+            if (Senhas.precisaAtualizar(u.getSenhaHash())) usuarios.atualizarSenha(c, u.getId(), Senhas.gerar(senha));
             usuarios.registrarAcesso(c, u.getId());
             return new Resultado(u.paraSessao(), null);
+        });
+    }
+
+    /**
+     * Entrada sem senha nas contas de demonstração (página /demo). Se um visitante tiver suspendido a conta
+     * ou errado a senha várias vezes, a conta volta a ficar ativa e desbloqueada para a demonstração seguir.
+     */
+    public Usuario entrarDemo(String email) {
+        return Banco.transacao(c -> {
+            Conta u = usuarios.buscarPorEmail(c, email, true);
+            if (u == null)
+                throw ErroNegocio.naoEncontrado("A conta de demonstração " + email + " não existe neste banco. "
+                        + "Carregue os dados de demonstração (script ongsave_neon.sql completo ou app.dadosDemo=true num banco vazio).");
+            if (!"ativo".equals(u.getStatus())) {
+                usuarios.atualizarStatus(c, u.getId(), "ativo");
+                u.setStatus("ativo");
+            }
+            usuarios.limparBloqueio(c, u.getId());
+            usuarios.registrarAcesso(c, u.getId());
+            return u.paraSessao();
         });
     }
 
@@ -170,6 +193,7 @@ public class AutenticacaoService {
         if (d.nome().length() < 3 || d.nome().length() > 160) throw ErroNegocio.invalido("Preencha o nome (3 a 160 caracteres).");
         if (!d.email().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$") || d.email().length() > 160) throw ErroNegocio.invalido("Informe um e-mail válido.");
         if (d.senha() == null || d.senha().length() < 8 || d.senha().length() > 128) throw ErroNegocio.invalido("A senha precisa de 8 a 128 caracteres.");
+        if (Senhas.fraca(d.senha())) throw ErroNegocio.invalido("Essa senha é muito comum. Escolha outra, com letras e números.");
         if (d.perfil() == Perfil.MOTORISTA) {
             if (!Documentos.cpfValido(d.documento())) throw ErroNegocio.invalido("Informe um CPF válido.");
             if (Documentos.digitos(d.cnh()).length() != 11) throw ErroNegocio.invalido("O número da CNH tem 11 dígitos.");
@@ -189,54 +213,82 @@ public class AutenticacaoService {
         try { return d.matches("\\d+") ? Math.min(Integer.parseInt(d), 1_000_000) : 0; } catch (NumberFormatException e) { return 0; }
     }
 
+    /* ======================= Recuperação de senha (link por e-mail) ======================= */
+
+    private static final int TOKEN_MINUTOS = 30;
+    private static final int MAX_PEDIDOS_HORA = 3;
+    private final SenhaTokenDAO tokens = new SenhaTokenDAO();
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
     /**
-     * Recuperação de senha simples, sem e-mail nem código: a pessoa informa o e-mail da conta,
-     * o CPF/CNPJ (ou o telefone) cadastrado e a nova senha duas vezes.
+     * Passo 1: se o e-mail pertencer a uma conta ativa, gera um token de uso único (30 min) e envia o link.
+     * A resposta para quem pede é SEMPRE a mesma (não revela se o e-mail tem conta). Só o hash do token vai para o banco.
      *
-     * <p>Proteções mínimas: a mesma mensagem para e-mail inexistente ou dados errados (não revela
-     * quem tem conta), tempo constante e o mesmo bloqueio de 15 minutos após 5 tentativas erradas
-     * usado no login. Ao trocar com sucesso, o contador de falhas e o bloqueio são limpos.</p>
+     * @param urlBase endereço público da aplicação, sem barra final (ex.: https://ongsave.onrender.com)
      */
-    public void redefinirSenha(String email, String verificacao, String nova, String confirmacao) {
+    public void solicitarRecuperacao(String email, String urlBase, String ip, EmailService emails) {
         String mail = email == null ? "" : email.trim();
-        String digitosInformados = Documentos.digitos(verificacao == null ? "" : verificacao);
-        if (mail.isEmpty() || digitosInformados.isEmpty())
-            throw ErroNegocio.invalido("Informe o e-mail e o CPF/CNPJ (ou telefone) da conta.");
+        if (mail.isEmpty() || mail.length() > 160 || !mail.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"))
+            throw ErroNegocio.invalido("Informe um e-mail válido.");
+        byte[] b = new byte[32];
+        RANDOM.nextBytes(b);
+        String token = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+
+        Conta u = Banco.transacao(c -> {
+            Conta conta = usuarios.buscarPorEmail(c, mail, true);
+            if (conta == null || !"ativo".equals(conta.getStatus())) return null;
+            if (tokens.pedidosRecentes(c, conta.getId()) >= MAX_PEDIDOS_HORA) return null;   // anti-spam, em silêncio
+            tokens.inserir(c, conta.getId(), Senhas.sha256(token), TOKEN_MINUTOS, ip);
+            auditoria.registrar(c, null, "Pediu recuperação de senha", conta.getNome(), conta.getId(), ip == null ? null : "IP " + ip);
+            return conta;
+        });
+        if (u == null) return;
+
+        String link = urlBase + "/recuperar-senha?token=" + token;
+        String nome = u.getNome() == null ? "" : u.getNome();
+        String texto = "Olá, " + nome + ".\n\nRecebemos um pedido para redefinir a senha da sua conta OngSave.\n"
+                + "Abra o link abaixo (válido por " + TOKEN_MINUTOS + " minutos, uso único):\n\n" + link
+                + "\n\nSe não foi você, ignore este e-mail: a sua senha continua a mesma.\n\nEquipa OngSave";
+        String html = "<div style=\"font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#0f172a\">"
+                + "<h2 style=\"color:#ea580c\">OngSave · redefinir senha</h2>"
+                + "<p>Olá, " + escaparHtml(nome) + ".</p><p>Recebemos um pedido para redefinir a senha da sua conta.</p>"
+                + "<p><a href=\"" + escaparHtml(link) + "\" style=\"display:inline-block;background:#ea580c;color:#fff;"
+                + "padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:bold\">Criar nova senha</a></p>"
+                + "<p style=\"font-size:13px;color:#64748b\">O link vale " + TOKEN_MINUTOS + " minutos e só pode ser usado uma vez. "
+                + "Se não foi você, ignore este e-mail: a sua senha continua a mesma.</p></div>";
+        emails.enviar(u.getEmail(), "OngSave · redefinir a sua senha", texto, html);
+    }
+
+    /** O link ainda é válido? (para mostrar o formulário ou um aviso de link expirado) */
+    public boolean tokenValido(String token) {
+        if (token == null || token.length() < 20 || token.length() > 100) return false;
+        return Banco.ler(c -> tokens.usuarioDoTokenValido(c, Senhas.sha256(token)) != null);
+    }
+
+    /** Passo 2: troca a senha com o token. Invalida todos os links em aberto da conta e limpa o bloqueio. */
+    public void redefinirComToken(String token, String nova, String confirmacao) {
         if (nova == null || nova.length() < 8 || nova.length() > 128)
             throw ErroNegocio.invalido("A nova senha precisa de 8 a 128 caracteres.");
         if (!nova.equals(confirmacao))
             throw ErroNegocio.invalido("As senhas não coincidem. Digite a mesma senha nos dois campos.");
-
-        // Resultado devolvido em vez de exceção para que o registo da tentativa falhada seja confirmado (commit).
-        String erro = Banco.transacao(c -> {
-            Conta u = usuarios.buscarPorEmail(c, mail, true);
-            if (u == null) {
-                Senhas.gastarTempo(nova);
-                return "Não encontrámos uma conta com esses dados. Confira o e-mail e o CPF/CNPJ (ou telefone).";
-            }
-            if (u.isBloqueadaTemporariamente()) {
-                long min = Math.max(1, (u.getBloqueioAte().getEpochSecond() - Instant.now().getEpochSecond() + 59) / 60);
-                return "Muitas tentativas sem sucesso. Tente de novo em " + min + " minuto(s).";
-            }
-            boolean confere = digitosInformados.equals(Documentos.digitos(nvl(u.getDocumento())))
-                    || digitosInformados.equals(Documentos.digitos(nvl(u.getTelefone())));
-            if (!confere) {
-                Senhas.gastarTempo(nova);
-                int falhas = u.getFalhasLogin() + 1;
-                if (falhas >= MAX_FALHAS) usuarios.bloquearTemporariamente(c, u.getId(), BLOQUEIO_MIN);
-                else usuarios.registrarFalhaLogin(c, u.getId(), falhas);
-                return "Não encontrámos uma conta com esses dados. Confira o e-mail e o CPF/CNPJ (ou telefone).";
-            }
-            usuarios.atualizarSenha(c, u.getId(), Senhas.gerar(nova));
-            usuarios.limparBloqueio(c, u.getId());
-            auditoria.registrar(c, null, "Senha redefinida (recuperação)", u.getNome(), u.getId(), null);
+        if (Senhas.fraca(nova))
+            throw ErroNegocio.invalido("Essa senha é muito comum. Escolha outra, com letras e números.");
+        if (token == null || token.length() < 20 || token.length() > 100)
+            throw ErroNegocio.invalido("Link inválido ou expirado. Peça um novo link de recuperação.");
+        Banco.transacao(c -> {
+            Long id = tokens.usuarioDoTokenValido(c, Senhas.sha256(token));
+            if (id == null) throw ErroNegocio.invalido("Link inválido ou expirado. Peça um novo link de recuperação.");
+            Conta u = usuarios.buscarPorId(c, id, true);
+            usuarios.atualizarSenha(c, id, Senhas.gerar(nova));
+            usuarios.limparBloqueio(c, id);
+            tokens.consumirTodos(c, id);
+            auditoria.registrar(c, null, "Senha redefinida (link por e-mail)", u == null ? "Conta #" + id : u.getNome(), id, null);
             return null;
         });
-        if (erro != null) throw ErroNegocio.invalido(erro);
     }
 
-    private static String nvl(String s) {
-        return s == null ? "" : s;
+    private static String escaparHtml(String s) {
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 
     /** Troca de senha (usada pelo admin inicial e pelos perfis no futuro). */
@@ -248,6 +300,7 @@ public class AutenticacaoService {
     /** Troca de senha pelo próprio utilizador, conferindo a senha atual. */
     public void alterarSenha(Usuario u, String atual, String nova) {
         if (nova == null || nova.length() < 8 || nova.length() > 128) throw ErroNegocio.invalido("A nova senha precisa de 8 a 128 caracteres.");
+        if (Senhas.fraca(nova)) throw ErroNegocio.invalido("Essa senha é muito comum. Escolha outra, com letras e números.");
         Banco.transacao(c -> {
             Conta conta = usuarios.buscarPorId(c, u.getId(), true);
             String hash = conta == null ? null : conta.getSenhaHash();

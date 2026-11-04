@@ -44,6 +44,8 @@ public abstract class ApiBase extends HttpServlet {
     private static final String VERIFICADO = "ongsave.statusVerificadoEm";
     private static final long REVALIDAR_MS = 60_000;
     private static final int JSON_MAX = 1024 * 1024;
+    /** Ações (POST) por utilizador por minuto: trava robôs e força bruta nos códigos de retirada/token. */
+    private static final br.com.ongsave.util.LimiteTaxa LIMITE_ESCRITA = new br.com.ongsave.util.LimiteTaxa(90, 60_000L);
 
     /** Perfil exigido; {@code null} = qualquer utilizador autenticado. */
     protected abstract Perfil perfil();
@@ -72,9 +74,16 @@ public abstract class ApiBase extends HttpServlet {
             if (u == null) throw new ErroNegocio(401, "Sessão expirada. Entre novamente.");
             if (perfil() != null && u.getPerfil() != perfil()) throw ErroNegocio.proibido("Acesso não permitido para este perfil.");
             if (escrita && !Csrf.valido(req)) throw ErroNegocio.proibido("Sessão expirada ou pedido inválido. Atualize a página.");
+            if (escrita && !LIMITE_ESCRITA.permitir("u" + u.getId()))
+                throw new ErroNegocio(429, "Muitas ações seguidas. Aguarde um minuto e tente de novo.");
+            // Contas de demonstração são partilhadas por todos os visitantes: ninguém pode trocar a senha delas.
+            if (escrita && sessao.getAttribute(br.com.ongsave.web.DemoFilter.CONTAS) != null
+                    && "/api/conta".equals(req.getServletPath()) && "/senha".equals(req.getPathInfo()))
+                throw ErroNegocio.proibido("No modo demonstração não é possível alterar a senha.");
             revalidar(s, sessao, u);
 
             Pedido p = new Pedido(req, resp, u, s);
+            p.demo = sessao.getAttribute(br.com.ongsave.web.DemoFilter.CONTAS) != null;
             Object r = escrita ? post(p) : get(p);
             if (r instanceof Arquivo a) { enviarArquivo(resp, a); return; }
             responder(resp, 200, r == null ? Json.obj("ok", true) : r);
@@ -139,6 +148,8 @@ public abstract class ApiBase extends HttpServlet {
         /** Segmentos do caminho depois do servlet: /lotes/12/cancelar -> [lotes, 12, cancelar]. */
         public final List<String> rota;
         private Map<String, Object> json;
+        /** Sessão da página /demo: o e-mail das contas partilhadas não pode ser trocado (a entrada depende dele). */
+        boolean demo;
 
         Pedido(HttpServletRequest req, HttpServletResponse resp, Usuario usuario, Servicos s) throws IOException {
             this.req = req;
@@ -210,7 +221,7 @@ public abstract class ApiBase extends HttpServlet {
         /** Campos simples num mapa (para os formulários de perfil). */
         public Map<String, String> campos(String... nomes) {
             Map<String, String> m = new LinkedHashMap<>();
-            for (String n : nomes) m.put(n, p(n));
+            for (String n : nomes) m.put(n, demo && "email".equals(n) ? usuario.getEmail() : p(n));
             return m;
         }
 

@@ -10,6 +10,10 @@
 #    ONGSAVE_APP_SIMULACAO      true = modo apresentação (frota e GPS simulados) · false = produção
 #    ONGSAVE_APP_DADOSDEMO      true = cria contas e dados de demonstração num banco vazio
 #    ONGSAVE_APP_ADMINSENHA     nova senha do admin@ongsave.com (mín. 8 caracteres)
+#    ONGSAVE_APP_DEMO           true = página /demo com entrada sem senha (desligue em produção)
+#    ONGSAVE_APP_URLPUBLICA     endereço público (links dos e-mails), ex.: https://ongsave.onrender.com
+#    ONGSAVE_MAIL_BREVOAPIKEY   chave da API da Brevo para enviar e-mails de recuperação de senha
+#    ONGSAVE_MAIL_REMETENTE     e-mail remetente verificado na Brevo
 #    PORT                       porta HTTP (Render, Railway, Fly e afins definem-na sozinhos)
 # =====================================================================
 
@@ -31,6 +35,11 @@ ENV ONGSAVE_APP_SIMULACAO=true \
 # Remove as apps de exemplo do Tomcat e publica o OngSave na raiz (/)
 RUN rm -rf "$CATALINA_HOME"/webapps/* "$CATALINA_HOME"/webapps.dist
 COPY --from=build /app/target/ongsave.war "$CATALINA_HOME"/webapps/ROOT.war
+
+# Segurança: o Tomcat corre com um utilizador sem privilégios (nunca como root)
+RUN groupadd --system ongsave && useradd --system --gid ongsave --home-dir "$CATALINA_HOME" --shell /usr/sbin/nologin ongsave \
+ && chown -R ongsave:ongsave "$CATALINA_HOME"
+USER ongsave
 
 EXPOSE 8080
 # Usa a porta de $PORT quando a plataforma a define (senão 8080)

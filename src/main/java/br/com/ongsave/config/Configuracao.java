@@ -153,10 +153,34 @@ public final class Configuracao {
     /** Geocodificar endereços com o OpenStreetMap (Nominatim) ao guardar perfis. */
     public boolean geocodificar() { return logico("geo.geocodificar", true); }
 
+    /* ======================= E-mail e endereço público ======================= */
+
+    /**
+     * Endereço público da aplicação, sem barra final (ex.: https://ongsave.onrender.com ou http://localhost:8080/ongsave).
+     * Usado nos links enviados por e-mail. Nunca se usa o cabeçalho Host do pedido para isso (evita "host header injection").
+     */
+    public String urlPublica() {
+        String u = texto("app.urlPublica", "");
+        while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+        return u;
+    }
+
+    /** Chave da API da Brevo (e-mails transacionais). Vazia = os e-mails só vão para o log do servidor. */
+    public String mailBrevoApiKey() { return texto("mail.brevoApiKey", ""); }
+    /** Remetente verificado na Brevo (ex.: o seu Gmail). */
+    public String mailRemetente() { return texto("mail.remetente", ""); }
+    public String mailNomeRemetente() { return texto("mail.nomeRemetente", "OngSave"); }
+
     /* ======================= Modo simulação (apresentações) ======================= */
 
-    /** Liga o simulador: GPS e frota de motoristas automáticos. Nunca em produção. */
-    public boolean simulacao() { return logico("app.simulacao", false); }
+    /**
+     * Página pública de demonstração (/demo): cada cartão entra direto no painel da conta de demonstração
+     * desse perfil, sem senha. Liga também o modo simulação. Use app.demo=false em produção.
+     */
+    public boolean demo() { return logico("app.demo", true); }
+
+    /** Liga o simulador: GPS e frota de motoristas automáticos. Sempre ligado com app.demo=true. Nunca em produção. */
+    public boolean simulacao() { return demo() || logico("app.simulacao", false); }
 
     /** Duração média de cada trecho simulado (até a empresa e até a ONG), em segundos. */
     public int simSegundosTrecho() { return inteiro("sim.segundosPorTrecho", 60); }

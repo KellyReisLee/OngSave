@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuração do contexto no Tomcat 10.1 (lida automaticamente no deploy, também pelo Eclipse).
+  - Cookie de sessão com SameSite=Lax: o navegador não o envia em pedidos vindos de outros sites
+    (segunda barreira contra CSRF, além do token).
+  - RemoteIpValve: atrás de um proxy/load balancer com HTTPS (Render, Railway, Fly...), usa os cabeçalhos
+    X-Forwarded-For / X-Forwarded-Proto. Assim request.getRemoteAddr() é o IP real do visitante (limites por IP)
+    e request.isSecure() fica true, o que liga o cookie Secure e o HSTS. Só confia em proxies de redes internas.
+-->
+<Context>
+  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor" sameSiteCookies="lax" />
+  <Valve className="org.apache.catalina.valves.RemoteIpValve"
+         remoteIpHeader="x-forwarded-for" protocolHeader="x-forwarded-proto" />
+</Context>

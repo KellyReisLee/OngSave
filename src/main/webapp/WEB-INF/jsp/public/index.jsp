@@ -47,6 +47,8 @@
           Funciona</a>
         <a href="#partners"
           class="text-sm font-medium text-slate-600 transition-colors duration-300 hover:text-orange-600">Parceiros</a>
+        <a href="${ctx}/demo"
+          class="text-sm font-semibold text-orange-600 transition-colors duration-300 hover:text-orange-700" style="color: #ea580c;"><i class="fa-solid fa-play mr-1 text-xs"></i>Ver demonstrativo</a>
       </div>
 
       <!-- CTA Buttons -->
@@ -85,17 +87,18 @@
           Funciona</a>
         <a href="#partners"
           class="mobile-link rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Parceiros</a>
+        <a href="${ctx}/demo"
+          class="rounded-lg px-3 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50" style="color: #ea580c;"><i class="fa-solid fa-play mr-1 text-xs"></i>Ver demonstrativo</a>
         <div class="mt-3 flex flex-col gap-2 pt-2 border-t border-slate-100">
-          <button
+          <a href="${ctx}/login"
             class="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 bg-white">
             <i class="fa-solid fa-arrow-right-to-bracket"></i> Entrar
-          </button>
+          </a>
 
-          <button
+          <a href="${ctx}/cadastro"
             class="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white border-0"
             style="background: linear-gradient(135deg, #f97316, #ea580c);">
             <i class="fa-solid fa-user-plus"></i> Criar Conta
-          </button>
           </a>
         </div>
       </div>
@@ -143,10 +146,10 @@
             </a>
 
 
-            <button
-              class="rounded-xl border border-slate-200 bg-white px-7 py-4 text-base font-semibold text-slate-700 transition-all duration-300 hover:border-orange-300 hover:text-orange-600 hover:shadow-md cursor-pointer">
-              Ver Demonstração
-            </button>
+            <a href="${ctx}/demo"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-7 py-4 text-base font-semibold text-slate-700 transition-all duration-300 hover:border-orange-300 hover:text-orange-600 hover:shadow-md">
+              <i class="fa-solid fa-play text-sm text-orange-500"></i> Ver demonstrativo
+            </a>
           </div>
 
           <!-- Trust badges -->

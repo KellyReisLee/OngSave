@@ -24,7 +24,7 @@
     <session-timeout>30</session-timeout>
     <cookie-config>
       <http-only>true</http-only>
-      <!-- Ative em produção (HTTPS): <secure>true</secure> -->
+      <!-- Secure é ligado sozinho em HTTPS (o RemoteIpValve do META-INF/context.xml trata os proxies). SameSite=Lax também vem do context.xml. -->
     </cookie-config>
     <tracking-mode>COOKIE</tracking-mode>
   </session-config>

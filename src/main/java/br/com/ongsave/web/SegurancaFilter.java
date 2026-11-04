@@ -19,6 +19,26 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebFilter(filterName = "SegurancaFilter", urlPatterns = "/*")
 public class SegurancaFilter implements Filter {
 
+    /**
+     * Content-Security-Policy: só deixa carregar scripts, estilos, fontes e imagens da própria aplicação e das CDNs
+     * usadas pelas páginas, e só deixa o JavaScript falar com o servidor, o OSRM (rotas) e o ViaCEP.
+     * Bloqueia plugins, {@code <base>} injetado, formulários para outros sites e a página dentro de iframes alheios.
+     * 'unsafe-inline' continua necessário por causa dos scripts/estilos embutidos nas JSPs e do Tailwind Play CDN.
+     */
+    static final String CSP = String.join("; ",
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://unpkg.com",
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com",
+            "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+            "img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://unpkg.com https://images.unsplash.com",
+            "connect-src 'self' https://router.project-osrm.org https://viacep.com.br",
+            "media-src 'self' blob:",
+            "worker-src 'self' blob:",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'self'");
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
@@ -27,7 +47,11 @@ public class SegurancaFilter implements Filter {
         resp.setHeader("X-Content-Type-Options", "nosniff");
         resp.setHeader("X-Frame-Options", "SAMEORIGIN");
         resp.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-        resp.setHeader("Permissions-Policy", "geolocation=(self), camera=(self), microphone=()");
+        resp.setHeader("Permissions-Policy", "geolocation=(self), camera=(self), microphone=(), payment=(), usb=()");
+        resp.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+        resp.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+        resp.setHeader("Content-Security-Policy", req.isSecure() ? CSP + "; upgrade-insecure-requests" : CSP);
+        // Atrás de um proxy HTTPS (Render, Railway...), o RemoteIpValve do META-INF/context.xml faz isSecure() = true.
         if (req.isSecure()) resp.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 
         String caminho = req.getRequestURI().substring(req.getContextPath().length());
