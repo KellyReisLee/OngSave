@@ -26,7 +26,7 @@ COPY src ./src
 RUN mvn -B -q clean package -DskipTests
 
 # ---------- 2) Execução no Tomcat ----------
-FROM tomcat:10.1-jre17-temurin
+FROM tomcat:11.0-jre17-temurin
 ENV ONGSAVE_APP_SIMULACAO=true \
     ONGSAVE_APP_DADOSDEMO=true \
     TZ=America/Sao_Paulo \
