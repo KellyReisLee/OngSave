@@ -123,7 +123,7 @@ A página inicial tem o link **Ver demonstrativo** (`/demo`). Cada cartão entra
 
 | Perfil | O que faz |
 |---|---|
-| **Empresa** | Publica lotes com foto, categoria, peso, conservação e janela de recolha · escolhe a ONG ou deixa a plataforma encontrar a mais próxima compatível · regista a retirada (peso e temperatura) e gera o código para o motorista · acompanha o veículo no mapa · relatório ESG com CO₂ evitado, refeições e economia · gere plano, franquia e faturas |
+| **Empresa** | Publica lotes com foto, categoria, peso, conservação e janela de recolha · escolhe a ONG ou deixa a plataforma encontrar a mais próxima compatível · edita volumes, janela de recolha e instruções ou cancela o lote enquanto aguarda motorista · regista a retirada (peso e temperatura) e gera o código para o motorista · acompanha o veículo no mapa · relatório ESG com CO₂ evitado, refeições e economia · gere plano, franquia e faturas |
 | **ONG** | Aceita ou recusa propostas respeitando a capacidade diária · vê o motorista a chegar · gera o token de entrega (10 min, 5 tentativas) · confere peso e condição e abre ocorrência quando há divergência · envia documentos para aprovação |
 | **Motorista** | Vê as ofertas no raio, compatíveis com o seu veículo · aceite atómico (só um motorista ganha) · rota ativa com GPS (só com consentimento LGPD) · confirma a coleta com o código da empresa e a entrega com token + foto · carteira com fretes retidos, liberados e saques |
 | **Admin** | Fila de aprovação de cadastros e documentos · suspende, bloqueia ou reativa contas com justificativa auditada · resolve ocorrências (liberar, ajustar ou estornar o frete) · mapa ao vivo de todas as entregas · financeiro (receita, fretes, reserva de liquidez) · parâmetros da plataforma |
