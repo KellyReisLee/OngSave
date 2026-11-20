@@ -108,7 +108,7 @@ A página inicial tem o link **Ver demonstrativo** (`/demo`). Cada cartão entra
 | <img src="docs/screenshots/04-recuperar-senha.png" alt="Recuperação de senha" width="600"> |
 </details>
 
-> As capturas foram feitas com os dados de demonstração e a simulação ligada. Nelas os mapas aparecem sem o fundo de ruas, porque foram tiradas num ambiente sem acesso ao OpenStreetMap; na aplicação o mapa mostra as ruas normalmente.
+> As capturas foram feitas com os dados de demonstração e a simulação ligada.
 
 **Contas de demonstração** (senha `ongsave123`, criadas só com `app.dadosDemo=true` num banco vazio):
 
