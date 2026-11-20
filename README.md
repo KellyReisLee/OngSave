@@ -7,8 +7,8 @@
 **Logística B2B para redistribuição de excedentes de alimentos.**
 Empresas publicam o que sobrou, ONGs aceitam, motoristas parceiros recolhem e entregam, e a plataforma comprova cada etapa com código, token e foto.
 
-[![CI](https://github.com/Evolua-app/ongsave/actions/workflows/ci.yml/badge.svg)](https://github.com/Evolua-app/ongsave/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Evolua-app/ongsave/actions/workflows/codeql.yml/badge.svg)](https://github.com/Evolua-app/ongsave/actions/workflows/codeql.yml)
+[![CI](https://github.com/KellyReisLee/OngSave/actions/workflows/ci.yml/badge.svg)](https://github.com/KellyReisLee/OngSave/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/KellyReisLee/OngSave/actions/workflows/codeql.yml/badge.svg)](https://github.com/KellyReisLee/OngSave/actions/workflows/codeql.yml)
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
 ![Jakarta EE](https://img.shields.io/badge/Servlet%206%20%C2%B7%20JSP%203.1-Jakarta%20EE%2010-1f6feb)
 ![Tomcat](https://img.shields.io/badge/Tomcat-10.1-F8DC75?logo=apachetomcat&logoColor=black)
@@ -24,6 +24,7 @@ Empresas publicam o que sobrou, ONGs aceitam, motoristas parceiros recolhem e en
 ## Sumário
 
 - [O problema](#-o-problema)
+- [Objetivos de Desenvolvimento Sustentável](#-objetivos-de-desenvolvimento-sustentável-ods)
 - [Demonstração](#-demonstração)
 - [Funcionalidades](#-funcionalidades)
 - [Fluxo de uma doação](#-fluxo-de-uma-doação)
@@ -37,6 +38,7 @@ Empresas publicam o que sobrou, ONGs aceitam, motoristas parceiros recolhem e en
 - [API](#-api)
 - [Estrutura do projeto](#-estrutura-do-projeto)
 - [Problemas comuns](#-problemas-comuns)
+- [Uso de inteligência artificial](#-uso-de-inteligência-artificial)
 - [Limitações conhecidas e próximos passos](#-limitações-conhecidas-e-próximos-passos)
 
 ## 🎯 O problema
@@ -47,6 +49,18 @@ Supermercados, padarias e atacadistas descartam todos os dias alimentos ainda pr
 - **ONGs** recebem propostas compatíveis com a sua capacidade, categorias aceites e câmara fria.
 - **Motoristas parceiros** num raio de 15 km aceitam a corrida e recebem o frete na carteira digital.
 - **Administração** aprova cadastros, analisa ocorrências e acompanha as finanças da plataforma.
+
+## 🌍 Objetivos de Desenvolvimento Sustentável (ODS)
+
+O OngSave contribui diretamente para três ODS da Agenda 2030 da ONU:
+
+| ODS | Como o OngSave contribui |
+|---|---|
+| **2 · Fome Zero e Agricultura Sustentável** | Leva alimentos ainda próprios para consumo até ONGs que servem famílias em insegurança alimentar. Cada quilo entregue é contado em refeições equivalentes. |
+| **11 · Cidades e Comunidades Sustentáveis** | Organiza a logística urbana da doação: rotas curtas num raio de 15 km, motoristas da própria região e menos resíduos orgânicos enviados para aterro pelas empresas da cidade. |
+| **13 · Ação Contra a Mudança Global do Clima** | Cada lote resgatado evita as emissões da decomposição do alimento descartado. O relatório ESG da empresa mostra o CO₂ evitado com uma metodologia fixa e auditável. |
+
+Também se relaciona com a meta 12.3 (reduzir pela metade o desperdício de alimentos), do ODS 12.
 
 ## 🎬 Demonstração
 
@@ -257,6 +271,22 @@ erDiagram
 
 Tabelas também presentes: `plataforma_config` (parâmetros em JSONB editados pelo admin), `notas_admin`, `auditoria` e `schema_versao` (controlo das migrações).
 
+### Consultas de análise
+
+O arquivo [`database/consultas.sql`](database/consultas.sql) tem 7 consultas de leitura, com JOIN e agregação, que respondem a perguntas do negócio:
+
+| # | Pergunta | Recursos de SQL |
+|---|---|---|
+| 1 | Quais empresas mais doaram (lotes, kg e refeições)? | `JOIN` · `COUNT` · `SUM` · `GROUP BY` |
+| 2 | Como está o desempenho de cada motorista (entregas, kg, frete)? | `JOIN` · `SUM` · `AVG` · `HAVING` |
+| 3 | Quanto da capacidade de cada ONG já está ocupada hoje? | `LEFT JOIN` · `SUM` · `COALESCE` |
+| 4 | Quantos kg foram resgatados por categoria e mês? | `date_trunc` · `GROUP BY` em duas dimensões |
+| 5 | Qual a divergência entre o peso declarado e o conferido, por empresa e ONG? | `JOIN` duplo em `usuarios` · `AVG` · `FILTER` |
+| 6 | Qual o saldo da carteira de cada motorista? | `JOIN` · `SUM` com `CASE` |
+| 7 | Quais ocorrências estão abertas, com lote, empresa, ONG e motorista? | `JOIN` em 5 tabelas · `LEFT JOIN` |
+
+Para rodar, cole o arquivo no **SQL Editor** do Neon (ou noutro cliente PostgreSQL) depois de criar o banco.
+
 ## 🧰 Tecnologias
 
 | Camada | Tecnologia |
@@ -419,13 +449,26 @@ No lote, só é possível editar volumes, janela de recolha e instruções. Peso
 
 Páginas: `/` · `/login` · `/cadastro` · `/recuperar-senha` · `/demo` · `/demo/{perfil}` · `/{perfil}/{pagina}` · `/logout`.
 
+### Coleção do Postman
+
+A documentação executável da API está em [`docs/OngSave.postman_collection.json`](docs/OngSave.postman_collection.json): 45 pedidos com exemplos de corpo e testes automáticos de status e conteúdo.
+
+1. No Postman, clique em **Import** e escolha o arquivo.
+2. Com o projeto a rodar (`app.demo=true`), ajuste a variável `baseUrl` se preciso (padrão: `http://localhost:8080/ongsave`).
+3. Rode a pasta **00 · Autenticação**. Ela entra nas contas de demonstração e guarda o cookie da sessão e o token CSRF.
+4. Rode as pastas **01 a 06** no **Runner** ou pedido a pedido. A pasta 06 tem os casos de erro (CSRF, método não permitido, rota inexistente).
+5. No **Publicar lote**, selecione uma foto no campo `foto` antes de enviar.
+
+A pasta **99** documenta as rotas que dependem de um registo numa fase específica (por exemplo, confirmar a coleta). Elas não fazem parte do Runner.
+
 ## 📁 Estrutura do projeto
 
 ```
 ongsave/
 ├─ .github/                 CI, CodeQL e Dependabot
-├─ database/                ongsave_neon.sql (banco completo para colar no Neon)
-├─ docs/screenshots/        imagens deste README
+├─ database/                ongsave_neon.sql (banco completo para colar no Neon) · consultas.sql (consultas de análise)
+├─ docs/                    OngSave.postman_collection.json (coleção da API)
+│  └─ screenshots/          imagens deste README
 ├─ src/main/java/br/com/ongsave/
 │  ├─ config/               Configuracao (ficheiro / variáveis de ambiente)
 │  ├─ controller/           FrontController (páginas, login, cadastro, recuperação, demo)
@@ -459,6 +502,19 @@ ongsave/
 | Não chegou o e-mail de recuperação | Sem Brevo configurada, o link está no log do Tomcat. Com Brevo, confira `app.urlPublica` e o remetente verificado. |
 | Motorista não vê ofertas | A ONG ainda não aceitou, o veículo não comporta a carga ou a validade passou. |
 | Veículos parados no modo demonstração | Confirme `app.demo=true` (ou `app.simulacao=true`) e reinicie o Tomcat. |
+
+## 🤖 Uso de inteligência artificial
+
+Usámos o **Claude (Anthropic)** como assistente de programação. Todo o código gerado foi revisto, compilado e testado antes de entrar no projeto.
+
+| Parte do projeto | Como a IA ajudou |
+|---|---|
+| API REST | Implementação dos endpoints `PUT` e `DELETE` (empresa, ONG e motorista) seguindo as camadas já existentes (controller → service → DAO), e dos testes desses endpoints contra o banco. |
+| Front-end | Botão e formulário **Editar lote** no painel da empresa, e ligação dos botões existentes às novas rotas. |
+| Documentação | Coleção do Postman, consultas SQL de análise e seções deste README (ODS, consultas, API). |
+| Capturas de tela | Script que tira as capturas do README com o Chrome em modo headless. |
+
+O enunciado, a ideia do produto, as regras de negócio e as decisões finais são da equipa.
 
 ## 🧭 Limitações conhecidas e próximos passos
 
