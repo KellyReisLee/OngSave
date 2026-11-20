@@ -4,7 +4,7 @@
      GET  /api/motorista/entrega          -> {entrega: {...mesmos campos, fase: 'coleta'|'transito'}}
      POST /api/motorista/aceitar          id  (409 se outro motorista aceitou primeiro)
      POST /api/motorista/coleta           lat, lon
-     POST /api/motorista/posicao          lat, lon, accuracy
+     PUT  /api/motorista/posicao          lat, lon, accuracy
      POST /api/motorista/finalizar        multipart: token, foto, lat, lon, capturada_em
    O servidor revalida tudo (raio, veículo, distância, token). O front só filtra por conveniência. */
 const RAIO_MAX_KM = PLAT.raioKm; // definido pelo administrador
@@ -34,9 +34,13 @@ const fmtHoras = h => h < 1 ? Math.round(h * 60) + ' min' : h < 48 ? Math.floor(
 
 
 /* ---------- Comunicação com a API ---------- */
-async function api(cam, dados, form) {
+async function api(cam, dados, form, metodo) {
   const op = { credentials: 'same-origin', headers: { 'X-CSRF-Token': csrf, 'Accept': 'application/json' } };
-  if (dados || form) {
+  if (metodo) {                             // PUT/DELETE: corpo em JSON (o servidor só lê formulários no POST)
+    op.method = metodo;
+    op.headers['Content-Type'] = 'application/json';
+    op.body = JSON.stringify(dados || {});
+  } else if (dados || form) {
     op.method = 'POST';
     op.body = form || new URLSearchParams(dados);
   }

@@ -124,6 +124,9 @@ public class EmpresaService {
         m.put("conf", Lotes.conferencia(l));
         m.put("frete", l.get("frete"));
         m.put("obs", l.get("obs"));
+        m.put("vol", l.get("volumes"));
+        m.put("j1", l.get("j1"));
+        m.put("j2", l.get("j2"));
         m.put("temFoto", l.get("temFoto"));
         return m;
     }

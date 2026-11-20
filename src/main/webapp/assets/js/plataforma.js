@@ -36,12 +36,13 @@ class OsErro extends Error { constructor(msg, status) { super(msg); this.status 
 
 /**
  * Chama a API. Sem `dados` faz GET; com objeto envia JSON; com FormData envia multipart.
+ * `metodo` (opcional): 'PUT' para atualizar ou 'DELETE' para remover; por omissão, POST.
  * Resolve com o JSON da resposta ou lança OsErro com a mensagem do servidor.
  */
-async function osApi(caminho, dados) {
+async function osApi(caminho, dados, metodo) {
   const op = { credentials: 'same-origin', headers: { 'X-CSRF-Token': OS_CSRF, 'Accept': 'application/json' } };
   if (dados !== undefined) {
-    op.method = 'POST';
+    op.method = metodo || 'POST';
     if (dados instanceof FormData) op.body = dados;
     else { op.headers['Content-Type'] = 'application/json'; op.body = JSON.stringify(dados || {}); }
   }

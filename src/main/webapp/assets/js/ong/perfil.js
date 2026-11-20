@@ -83,7 +83,7 @@ $('form-perfil').onsubmit = ev => {
 
   const moradaMudou = ['cep', 'rua', 'num', 'compl', 'bairro', 'cidade', 'uf'].some(k => d[k] !== (dados[k] || ''));
   const bt = $('btn-salvar'); bt.disabled = true;
-  osApi('ong/perfil', { ...d, categorias: d.cats, camaraFria: d.camara })
+  osApi('ong/perfil', { ...d, categorias: d.cats, camaraFria: d.camara }, 'PUT')
     .then(novo => {
       Object.assign(perfilOng(), novo); dados = { ...novo }; preencher();
       $('top-nome').textContent = novo.fantasia; $('top-ini').textContent = novo.fantasia.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();

@@ -52,7 +52,7 @@ $('form-perfil').onsubmit = e => {
   e.preventDefault();
   const d = Object.fromEntries(Object.entries(CAMPOS_M).map(([k, id]) => [k, $(id).value.trim()]));
   $('btn-salvar').disabled = true;
-  osApi('motorista/perfil', d)
+  osApi('motorista/perfil', d, 'PUT')
     .then(novo => {
       Object.assign(MOT, novo); preencher();
       aviso('Alterações guardadas.' + (novo.veiculo !== VEICULO ? ' Recarregue as páginas para filtrar as entregas pelo novo veículo.' : ''));
@@ -71,7 +71,7 @@ function consentimento() {
 }
 $('btn-revogar').onclick = () => {
   if (!confirm('Revogar o consentimento de localização? Sem ele não poderá aceitar entregas.')) return;
-  osApi('motorista/consentimento', { conceder: false })
+  osApi('motorista/consentimento', {}, 'DELETE')
     .then(() => { MOT.consentimento = null; consentimento(); aviso('Consentimento revogado. Para aceitar entregas, será preciso consentir de novo.'); })
     .catch(er => aviso(er.message, 'erro'));
 };

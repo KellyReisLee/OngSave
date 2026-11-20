@@ -21,6 +21,9 @@ import jakarta.servlet.annotation.WebServlet;
  * POST /api/motorista/posicao             lat, lon, accuracy
  * POST /api/motorista/finalizar           multipart: token, foto, lat, lon, capturada_em
  * POST /api/motorista/perfil | consentimento | sacar | contestar
+ * PUT  /api/motorista/perfil              JSON: os mesmos campos do POST /perfil
+ * PUT  /api/motorista/posicao             JSON: lat, lon, accuracy (atualiza a posição atual do motorista)
+ * DELETE /api/motorista/consentimento     revoga o consentimento de localização
  * </pre>
  */
 @WebServlet(name = "MotoristaApi", urlPatterns = "/api/motorista/*")
@@ -50,21 +53,12 @@ public class MotoristaApi extends ApiBase {
                 return m.aceitar(p.usuario, id);
             }
             case "coleta" -> { m.coletar(p.usuario, p.num("lat"), p.num("lon"), p.p("codigo")); return null; }
-            case "posicao" -> {
-                double acc = p.num("accuracy");
-                m.registrarPosicao(p.usuario, p.num("lat"), p.num("lon"), Double.isNaN(acc) ? null : acc);
-                return null;
-            }
+            case "posicao" -> { return registrarPosicao(p); }
             case "finalizar" -> {
                 m.finalizar(p.usuario, p.p("token"), p.arquivo("foto", 8 * 1024 * 1024), p.num("lat"), p.num("lon"), p.p("capturada_em"));
                 return null;
             }
-            case "perfil" -> {
-                Map<String, Object> r = m.atualizarPerfil(p.usuario, p.campos("nome", "email", "tel", "veiculo", "placa", "modelo", "cnh", "cat",
-                        "cnhValidade", "cep", "rua", "num", "bairro", "cidade", "uf"));
-                p.atualizarNomeSessao((String) r.get("nome"));
-                return r;
-            }
+            case "perfil" -> { return atualizarPerfil(p); }
             case "consentimento" -> { return m.consentimento(p.usuario, p.bool("conceder")); }
             case "sacar" -> { return m.sacar(p.usuario, p.p("valor")); }
             case "simular" -> {
@@ -74,5 +68,33 @@ public class MotoristaApi extends ApiBase {
             case "contestar" -> { m.contestar(p.usuario, p.p("texto")); return null; }
             default -> throw ErroNegocio.naoEncontrado("Recurso não encontrado.");
         }
+    }
+
+    /** PUT: atualiza o perfil ou a posição atual do motorista. */
+    @Override
+    protected Object put(Pedido p) {
+        if (p.e("perfil")) return atualizarPerfil(p);
+        if (p.e("posicao")) return registrarPosicao(p);
+        throw ErroNegocio.naoEncontrado("Recurso não encontrado.");
+    }
+
+    /** DELETE: revoga o consentimento de localização (sem ele o motorista não aceita entregas). */
+    @Override
+    protected Object delete(Pedido p) {
+        if (p.e("consentimento")) return p.s.motorista.consentimento(p.usuario, false);
+        throw ErroNegocio.naoEncontrado("Recurso não encontrado.");
+    }
+
+    private static Object atualizarPerfil(Pedido p) {
+        Map<String, Object> r = p.s.motorista.atualizarPerfil(p.usuario, p.campos("nome", "email", "tel", "veiculo", "placa", "modelo", "cnh", "cat",
+                "cnhValidade", "cep", "rua", "num", "bairro", "cidade", "uf"));
+        p.atualizarNomeSessao((String) r.get("nome"));
+        return r;
+    }
+
+    private static Object registrarPosicao(Pedido p) {
+        double acc = p.num("accuracy");
+        p.s.motorista.registrarPosicao(p.usuario, p.num("lat"), p.num("lon"), Double.isNaN(acc) ? null : acc);
+        return null;
     }
 }

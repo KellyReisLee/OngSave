@@ -34,6 +34,7 @@ public class LoteDAO {
     /** Vista de lote para os painéis (empresa, ONG, motorista, admin). */
     private static final String VISTA = """
             SELECT l.id, l.categoria AS tipo, l.peso_kg AS kg, l.volumes, l.conservacao AS cons, l.veiculo AS "veicKey",
+                   l.janela_inicio AS j1, l.janela_fim AS j2,
                    l.estado, l.frete, l.observacao AS obs, l.frete_retido AS "freteRetido",
                    l.validade, EXTRACT(EPOCH FROM (l.validade - now())) / 3600.0 AS h,
                    (EXTRACT(EPOCH FROM l.criado_em) * 1000)::bigint AS "criadoMs",

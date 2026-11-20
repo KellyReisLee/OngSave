@@ -103,7 +103,7 @@ $('disp').onclick = e => {
     const motivo = prompt('Recusar a proposta do lote #' + d.id + '? Ela será enviada a outra instituição compatível.\nMotivo (opcional):', '');
     if (motivo === null) return;
     b.disabled = true;
-    osApi('ong/propostas/' + d.id + '/recusar', { motivo })
+    osApi('ong/propostas/' + d.id, { motivo }, 'DELETE')
       .then(() => { DISP.splice(DISP.indexOf(d), 1); disponiveis(); aviso('Proposta do lote #' + d.id + ' recusada. A plataforma vai oferecê-la a outra instituição.'); atualizarDados(); })
       .catch(e => { b.disabled = false; aviso(e.message); });
   }

@@ -173,7 +173,8 @@ function detalhe() {
   $('d-titulo').textContent = '#LOTE-' + l.id;
   const campo = (r, v) => '<div><p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">' + r + '</p><p class="font-semibold text-slate-800">' + v + '</p></div>';
   let acoes = '';
-  if (l.estado === 'aguardando') acoes = '<button data-acao="cancelar" class="w-full py-3 rounded-2xl border border-red-200 text-red-600 font-bold text-sm hover:bg-red-50"><i class="fa-solid fa-ban"></i> Cancelar lote</button>';
+  if (l.estado === 'aguardando') acoes = edicaoHtml(l) +
+    '<button data-acao="cancelar" class="w-full py-3 rounded-2xl border border-red-200 text-red-600 font-bold text-sm hover:bg-red-50"><i class="fa-solid fa-ban"></i> Cancelar lote</button>';
   if (l.estado === 'aceito') acoes = retiradaHtml(l);
   if (l.retirada && l.estado !== 'aceito') acoes = '<div class="rounded-2xl bg-slate-50 p-4 text-sm"><p class="font-bold text-slate-800">Retirada registrada</p><p class="text-slate-600">' + fmt(l.retirada.kg) + ' kg' + (l.retirada.temp != null ? ' · ' + l.retirada.temp + ' °C' : '') + ' · ' + new Date(l.retirada.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</p></div>' + acoes;
   if (l.estado === 'entregue') acoes = (l.retirada ? acoes : '') + '<button data-acao="comprovante" class="w-full py-3 rounded-2xl bg-orange-600 text-white font-bold text-sm hover:bg-orange-700"><i class="fa-solid fa-file-arrow-down"></i> Baixar comprovante</button>';
@@ -203,9 +204,14 @@ $('d-conteudo').onclick = e => {
   const l = LOTES.find(x => x.id === aberto);
   if (b.dataset.acao === 'cancelar' && confirm('Cancelar o lote #' + l.id + '? Ele deixará de aparecer para os motoristas.')) {
     b.disabled = true;
-    osApi('empresa/lotes/' + l.id + '/cancelar', {})
+    osApi('empresa/lotes/' + l.id, {}, 'DELETE')
       .then(() => { l.estado = 'cancelado'; aviso('Lote #' + l.id + ' cancelado.'); redesenhar(); atualizarDados(); })
       .catch(er => { b.disabled = false; aviso(er.message); });
+  }
+  if (b.dataset.acao === 'editar') {
+    const form = $('form-editar'); form.classList.toggle('hidden');
+    b.setAttribute('aria-expanded', String(!form.classList.contains('hidden')));
+    if (!form.classList.contains('hidden')) $('ed-vol').focus();
   }
   if (b.dataset.acao === 'comprovante') {
     const txt = 'COMPROVANTE DE ENTREGA - OngSave Brasil\nLote: #' + l.id + '\nCategoria: ' + l.tipo + '\nPeso: ' + l.kg + ' kg\nONG: ' + l.ong + '\nMotorista: ' + l.mot + ' (' + l.placa + ')\nValidado por Token da ONG.\nEmpresa: ' + EMP.nome + ' (CNPJ ' + EMP.cnpj + ')\nEmitido em: ' + new Date().toLocaleString('pt-BR');
@@ -214,7 +220,9 @@ $('d-conteudo').onclick = e => {
 };
 
 /* ---------- Atualização ao vivo (dados do servidor, via empresa.js) ---------- */
-function redesenhar() { resumo(); alertas(); tabela(); listaTransito(); painelPlano(); fiscal(); if (aberto) detalhe(); }
+/* Não redesenha o detalhe enquanto o formulário de edição está aberto (a atualização automática apagaria o que foi digitado). */
+const editando = () => { const f = $('form-editar'); return !!f && !f.classList.contains('hidden'); };
+function redesenhar() { resumo(); alertas(); tabela(); listaTransito(); painelPlano(); fiscal(); if (aberto && !editando()) detalhe(); }
 aoAtualizar(() => { redesenhar(); kpis(); vehicleChart.data.datasets[0].data = ['carro', 'van', 'cam'].map(veicN); vehicleChart.update(); },
   () => {
     if (sel) sel = LOTES.find(l => l.id === sel.id) || sel;
@@ -248,8 +256,33 @@ function retiradaHtml(l) {
     (frio ? '<div><label class="rotulo" for="rt-temp">Temperatura da carga (°C)</label><input id="rt-temp" type="number" step="0.1" class="campo" placeholder="Ex: 4"></div>' : '') +
     '<div><label class="rotulo" for="rt-obs">Observação</label><input id="rt-obs" maxlength="200" class="campo"></div><button type="submit" class="btn-lar w-full">Gerar código de retirada</button></form>';
 }
+/* ---------- Editar lote (PUT /api/empresa/lotes/{id}) ---------- */
+function edicaoHtml(l) {
+  const v = x => x == null ? '' : esc(String(x));
+  return '<button data-acao="editar" aria-expanded="false" aria-controls="form-editar" class="w-full py-3 rounded-2xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50"><i class="fa-solid fa-pen"></i> Editar lote</button>' +
+    '<form id="form-editar" class="hidden rounded-2xl border border-slate-200 bg-slate-50/60 p-5 space-y-3">' +
+    '<p class="font-bold text-sm text-slate-800">Editar lote #' + l.id + '</p>' +
+    '<p class="text-xs text-slate-500">Pode mudar os volumes, a janela de recolha e as instruções. Para mudar peso, categoria ou veículo, cancele e publique de novo.</p>' +
+    '<div><label class="rotulo" for="ed-vol">Volumes</label><input id="ed-vol" type="number" min="1" max="5000" step="1" required value="' + v(l.vol) + '" class="campo"></div>' +
+    '<div class="grid grid-cols-2 gap-3"><div><label class="rotulo" for="ed-j1">Recolha a partir de</label><input id="ed-j1" type="time" value="' + v(l.j1) + '" class="campo"></div>' +
+    '<div><label class="rotulo" for="ed-j2">Até</label><input id="ed-j2" type="time" value="' + v(l.j2) + '" class="campo"></div></div>' +
+    '<div><label class="rotulo" for="ed-obs">Instruções para o motorista</label><textarea id="ed-obs" maxlength="500" rows="3" class="campo">' + v(l.obs) + '</textarea></div>' +
+    '<button type="submit" class="btn-lar w-full">Guardar alterações</button></form>';
+}
+function salvarEdicao(form) {
+  const l = LOTES.find(x => x.id === aberto); if (!l) return;
+  const vol = $('ed-vol').value, j1 = $('ed-j1').value, j2 = $('ed-j2').value, obs = $('ed-obs').value.trim();
+  if (!(+vol >= 1)) return aviso('Informe a quantidade de volumes.');
+  if (j1 && j2 && j1 >= j2) return aviso('O início da janela deve ser antes do fim.');
+  const bt = form.querySelector('button[type=submit]'); bt.disabled = true;
+  osApi('empresa/lotes/' + l.id, { vol, j1, j2, obs }, 'PUT')
+    .then(r => { Object.assign(l, { vol: r.volumes, j1: r.j1, j2: r.j2, obs: r.obs }); aviso('Lote #' + l.id + ' atualizado.'); detalhe(); })
+    .catch(er => { bt.disabled = false; aviso(er.message); });
+}
+
 $('d-conteudo').addEventListener('submit', e => {
   e.preventDefault();
+  if (e.target.id === 'form-editar') return salvarEdicao(e.target);
   const l = LOTES.find(x => x.id === aberto), kg = $('rt-kg').value, frio = l.cons !== 'amb', t = frio ? $('rt-temp').value : '';
   if (kg === '' || !(+kg > 0)) return aviso('Informe o peso retirado.');
   if (frio && t === '') return aviso('Informe a temperatura da carga refrigerada.');

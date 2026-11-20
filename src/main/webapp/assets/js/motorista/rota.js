@@ -119,7 +119,7 @@ function aoMover(p) {
   atualizarAlvo();
   if (Date.now() - ultimoEnvio > 5000) {
     ultimoEnvio = Date.now();
-    api('posicao', { lat: eu.lat, lon: eu.lon, accuracy: p.coords.accuracy });
+    api('posicao', { lat: eu.lat, lon: eu.lon, accuracy: p.coords.accuracy }, null, 'PUT');
   }
 }
 

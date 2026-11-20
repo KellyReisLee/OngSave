@@ -66,7 +66,7 @@ $('form-perfil').onsubmit = ev => {
 
   const moradaMudou = ['cep', 'rua', 'num', 'compl', 'bairro', 'cidade', 'uf'].some(k => d[k] !== (dados[k] || ''));
   $('btn-salvar').disabled = true;
-  osApi('empresa/perfil', d).then(novo => {
+  osApi('empresa/perfil', d, 'PUT').then(novo => {
     Object.assign(perfilEmpresa(), novo); dados = { ...novo }; preencher();
     $('top-nome').textContent = novo.nome; $('top-cnpj').textContent = novo.cnpj;
     $('top-ini').textContent = novo.nome.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();

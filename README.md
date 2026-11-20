@@ -394,8 +394,8 @@ Todas as rotas ficam sob `/api`, exigem sessão e o perfil certo e devolvem JSON
 |---|---|
 | Todos | `GET /api/conta/plataforma` · `GET /api/conta/fotos/{lote\|entrega}/{id}` · `POST /api/conta/notificacoes/lidas` · `POST /api/conta/documentos/{id}` · `POST /api/conta/senha` |
 | Empresa | `GET estado` · `POST lotes`, `lotes/{id}/cancelar`, `lotes/{id}/retirada`, `perfil`, `plano` · `PUT lotes/{id}`, `perfil` · `DELETE lotes/{id}` |
-| Motorista | `GET estado`, `ofertas?lat&lon`, `entrega` · `POST aceitar`, `coleta`, `posicao`, `finalizar`, `perfil`, `consentimento`, `sacar`, `contestar` |
-| ONG | `GET estado` · `POST propostas/{id}/aceitar\|recusar`, `lotes/{id}/token\|conferencia\|reportar`, `perfil` |
+| Motorista | `GET estado`, `ofertas?lat&lon`, `entrega` · `POST aceitar`, `coleta`, `posicao`, `finalizar`, `perfil`, `consentimento`, `sacar`, `contestar` · `PUT perfil`, `posicao` · `DELETE consentimento` |
+| ONG | `GET estado` · `POST propostas/{id}/aceitar\|recusar`, `lotes/{id}/token\|conferencia\|reportar`, `perfil` · `PUT perfil` · `DELETE propostas/{id}` |
 | Admin | `GET estado`, `documentos/{id}/arquivo` · `POST usuarios/{id}/status\|notas\|solicitar`, `documentos/{id}`, `ocorrencias/{id}/analisar\|resolver`, `plataforma` |
 
 ### Endpoints de atualização e remoção (PUT e DELETE)
@@ -407,8 +407,15 @@ Seguem as mesmas regras das outras rotas: sessão iniciada, perfil certo e token
 | `PUT` | `/api/empresa/lotes/{id}` | `{"vol": 7, "j1": "09:00", "j2": "12:00", "obs": "Portão lateral"}` (todos opcionais; o que não for enviado fica igual) | `200` lote atualizado · `404` lote inexistente ou de outra empresa · `409` lote que já não aguarda motorista · `422` dados inválidos |
 | `PUT` | `/api/empresa/perfil` | os mesmos campos do `POST /perfil` | `200` perfil atualizado · `422` dados inválidos |
 | `DELETE` | `/api/empresa/lotes/{id}` | — | `200` `{"id": 12, "estado": "cancelado"}` · `404` · `409` lote que já não aguarda motorista |
+| `PUT` | `/api/ong/perfil` | os mesmos campos do `POST /perfil` | `200` perfil atualizado · `422` dados inválidos |
+| `DELETE` | `/api/ong/propostas/{id}` | `{"motivo": "Sem espaço na câmara fria"}` (opcional) | `200` `{"id": 12, "recusada": true}` · `404` proposta inexistente ou já tratada · `409` um motorista já aceitou |
+| `PUT` | `/api/motorista/perfil` | os mesmos campos do `POST /perfil` | `200` perfil atualizado · `422` dados inválidos |
+| `PUT` | `/api/motorista/posicao` | `{"lat": -23.56, "lon": -46.64, "accuracy": 12}` | `200` posição registada |
+| `DELETE` | `/api/motorista/consentimento` | — | `200` `{"consentimento": null}` (sem consentimento, o motorista não aceita entregas) |
 
-Só é possível editar volumes, janela de recolha e instruções. Peso, categoria, conservação e veículo não mudam, porque a ONG foi escolhida com base neles. O `DELETE` não apaga a linha: marca o lote como `cancelado`, para manter o histórico e a auditoria. Um método que a rota não suporta devolve `405`.
+As telas já usam estas rotas: **Editar lote** e **Cancelar lote** no painel da empresa, **Recusar** proposta no painel da ONG, **Salvar** perfil nos três perfis, envio do GPS e **Revogar consentimento** no app do motorista. As rotas `POST` antigas continuam a funcionar.
+
+No lote, só é possível editar volumes, janela de recolha e instruções. Peso, categoria, conservação e veículo não mudam, porque a ONG foi escolhida com base neles. O `DELETE` não apaga a linha: marca o lote como `cancelado`, para manter o histórico e a auditoria. Um método que a rota não suporta devolve `405`.
 
 Páginas: `/` · `/login` · `/cadastro` · `/recuperar-senha` · `/demo` · `/demo/{perfil}` · `/{perfil}/{pagina}` · `/logout`.
 
