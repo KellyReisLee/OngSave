@@ -1,0 +1,2560 @@
+{
+  "info": {
+    "name": "OngSave API",
+    "description": "API REST do OngSave (Java 17, Servlets, Tomcat 10.1). Todas as respostas são JSON; erros vêm como `{\"erro\": \"mensagem\"}` com o status HTTP adequado (400, 401, 403, 404, 405, 409, 422, 429).\n\n**Como usar**\n1. Ligue o projeto no Tomcat com `app.demo=true` e ajuste a variável `baseUrl` se preciso.\n2. Rode a pasta **00 · Autenticação**: ela cria a sessão e guarda o token CSRF.\n3. Rode as pastas 01 a 07 (pelo *Runner* ou pedido a pedido). Cada pedido tem testes automáticos.\n4. Para o *Publicar lote*, selecione uma foto no campo `foto`.\n\nA pasta 99 documenta as rotas que dependem de dados numa fase específica; não a inclua no Runner.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/ongsave"
+    },
+    {
+      "key": "csrf",
+      "value": ""
+    },
+    {
+      "key": "loteId",
+      "value": ""
+    },
+    {
+      "key": "propostaId",
+      "value": ""
+    },
+    {
+      "key": "validade",
+      "value": ""
+    },
+    {
+      "key": "plano",
+      "value": ""
+    },
+    {
+      "key": "empresaPerfil",
+      "value": ""
+    },
+    {
+      "key": "iotChave",
+      "value": "ongsave-iot-demo"
+    },
+    {
+      "key": "pesagemLote",
+      "value": ""
+    },
+    {
+      "key": "pesagemKg",
+      "value": ""
+    },
+    {
+      "key": "pesoDivergente",
+      "value": ""
+    },
+    {
+      "key": "ongPerfil",
+      "value": ""
+    },
+    {
+      "key": "motoristaPerfil",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 · Autenticação (demonstração)",
+      "description": "Rode estes quatro pedidos primeiro. Depois deles, a sessão tem os quatro perfis e o token CSRF fica guardado.",
+      "item": [
+        {
+          "name": "Entrar como Empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/demo/empresa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "demo",
+                "empresa"
+              ]
+            },
+            "description": "Entra sem senha na conta de demonstração do perfil **Empresa** (exige `app.demo=true`). O servidor cria a sessão (cookie `JSESSIONID`, guardado pelo Postman) e redireciona para o painel. O script de teste lê o token CSRF da página e guarda-o na variável `csrf`, usada no cabeçalho `X-CSRF-Token` de todos os POST, PUT e DELETE. Na demonstração, uma mesma sessão pode ter os quatro perfis abertos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const html = pm.response.text();",
+                  "const m = html.match(/<meta name=\"csrf\" content=\"([0-9a-fA-F]+)\"/);",
+                  "pm.test(\"Entrou no painel (200)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Token CSRF encontrado na página\", () => pm.expect(m, \"meta csrf\").to.not.be.null);",
+                  "if (m) pm.collectionVariables.set(\"csrf\", m[1]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrar como ONG",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/demo/ong",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "demo",
+                "ong"
+              ]
+            },
+            "description": "Entra sem senha na conta de demonstração do perfil **ONG** (exige `app.demo=true`). O servidor cria a sessão (cookie `JSESSIONID`, guardado pelo Postman) e redireciona para o painel. O script de teste lê o token CSRF da página e guarda-o na variável `csrf`, usada no cabeçalho `X-CSRF-Token` de todos os POST, PUT e DELETE. Na demonstração, uma mesma sessão pode ter os quatro perfis abertos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const html = pm.response.text();",
+                  "const m = html.match(/<meta name=\"csrf\" content=\"([0-9a-fA-F]+)\"/);",
+                  "pm.test(\"Entrou no painel (200)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Token CSRF encontrado na página\", () => pm.expect(m, \"meta csrf\").to.not.be.null);",
+                  "if (m) pm.collectionVariables.set(\"csrf\", m[1]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrar como Motorista",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/demo/motorista",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "demo",
+                "motorista"
+              ]
+            },
+            "description": "Entra sem senha na conta de demonstração do perfil **Motorista** (exige `app.demo=true`). O servidor cria a sessão (cookie `JSESSIONID`, guardado pelo Postman) e redireciona para o painel. O script de teste lê o token CSRF da página e guarda-o na variável `csrf`, usada no cabeçalho `X-CSRF-Token` de todos os POST, PUT e DELETE. Na demonstração, uma mesma sessão pode ter os quatro perfis abertos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const html = pm.response.text();",
+                  "const m = html.match(/<meta name=\"csrf\" content=\"([0-9a-fA-F]+)\"/);",
+                  "pm.test(\"Entrou no painel (200)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Token CSRF encontrado na página\", () => pm.expect(m, \"meta csrf\").to.not.be.null);",
+                  "if (m) pm.collectionVariables.set(\"csrf\", m[1]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrar como Administrador",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/demo/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "demo",
+                "admin"
+              ]
+            },
+            "description": "Entra sem senha na conta de demonstração do perfil **Administrador** (exige `app.demo=true`). O servidor cria a sessão (cookie `JSESSIONID`, guardado pelo Postman) e redireciona para o painel. O script de teste lê o token CSRF da página e guarda-o na variável `csrf`, usada no cabeçalho `X-CSRF-Token` de todos os POST, PUT e DELETE. Na demonstração, uma mesma sessão pode ter os quatro perfis abertos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const html = pm.response.text();",
+                  "const m = html.match(/<meta name=\"csrf\" content=\"([0-9a-fA-F]+)\"/);",
+                  "pm.test(\"Entrou no painel (200)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Token CSRF encontrado na página\", () => pm.expect(m, \"meta csrf\").to.not.be.null);",
+                  "if (m) pm.collectionVariables.set(\"csrf\", m[1]);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 · Empresa",
+      "description": "Rotas do painel da empresa doadora (`/api/empresa`).",
+      "item": [
+        {
+          "name": "Estado do painel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "estado"
+              ]
+            },
+            "description": "Perfil, lotes, KPIs e notificações da empresa. O teste guarda o perfil (para o PUT /perfil) e um lote que ainda aguarda motorista (para o PUT e o DELETE)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Tem empresa e lotes\", () => { pm.expect(j).to.have.property(\"empresa\"); pm.expect(j.lotes).to.be.an(\"array\"); });",
+                  "const campos = [\"nome\",\"email\",\"tel\",\"descarte\",\"cep\",\"rua\",\"num\",\"compl\",\"bairro\",\"cidade\",\"uf\"];",
+                  "const perfil = {}; campos.forEach(k => perfil[k] = j.empresa[k]);",
+                  "pm.collectionVariables.set(\"empresaPerfil\", JSON.stringify(perfil, null, 2));",
+                  "pm.collectionVariables.set(\"plano\", j.empresa.plano);",
+                  "const livre = j.lotes.find(l => l.estado === \"aguardando\" && !l.mot);",
+                  "pm.collectionVariables.set(\"loteId\", livre ? livre.id : \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publicar lote (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes"
+              ]
+            },
+            "description": "Publica um lote de excedente. **Antes de enviar, selecione uma foto no campo `foto`.** Se nenhuma ONG tiver capacidade livre hoje, a API responde 422 com a explicação.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tipo",
+                  "value": "Hortifrúti / Frutas e Verduras",
+                  "type": "text",
+                  "description": "Categoria (lista fixa)"
+                },
+                {
+                  "key": "kg",
+                  "value": "20",
+                  "type": "text"
+                },
+                {
+                  "key": "vol",
+                  "value": "2",
+                  "type": "text",
+                  "description": "Volumes"
+                },
+                {
+                  "key": "cons",
+                  "value": "amb",
+                  "type": "text",
+                  "description": "amb | ref | cong"
+                },
+                {
+                  "key": "validade",
+                  "value": "{{validade}}",
+                  "type": "text"
+                },
+                {
+                  "key": "j1",
+                  "value": "09:00",
+                  "type": "text",
+                  "description": "Início da janela de recolha"
+                },
+                {
+                  "key": "j2",
+                  "value": "18:00",
+                  "type": "text",
+                  "description": "Fim da janela de recolha"
+                },
+                {
+                  "key": "veic",
+                  "value": "carro",
+                  "type": "text",
+                  "description": "carro | van | cam"
+                },
+                {
+                  "key": "ong",
+                  "value": "",
+                  "type": "text",
+                  "description": "Id da ONG; vazio = a plataforma escolhe a mais próxima compatível"
+                },
+                {
+                  "key": "obs",
+                  "value": "Teste pelo Postman",
+                  "type": "text"
+                },
+                {
+                  "key": "termo",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": [],
+                  "description": "OBRIGATÓRIO: selecione uma foto JPG ou PNG (até 5 MB)"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// validade: daqui a 24 horas, no formato ISO aceite pela API",
+                  "pm.collectionVariables.set(\"validade\", new Date(Date.now() + 24 * 3600 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Lote publicado (200)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"loteId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar lote",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/{{loteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "{{loteId}}"
+              ]
+            },
+            "description": "Altera volumes, janela de recolha e instruções de um lote que ainda aguarda motorista. Campos omitidos ficam iguais.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vol\": 3,\n  \"j1\": \"10:00\",\n  \"j2\": \"17:00\",\n  \"obs\": \"Retirar na doca 2 (editado pelo Postman)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"loteId\")) {",
+                  "  console.log(\"A saltar: nenhum lote a aguardar motorista\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Volumes atualizados\", () => pm.expect(pm.response.json().volumes).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar lote · janela invertida (erro)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/{{loteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "{{loteId}}"
+              ]
+            },
+            "description": "Caso de erro: início da janela depois do fim. A API valida e responde 422.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"j1\": \"15:00\",\n  \"j2\": \"09:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"loteId\")) {",
+                  "  console.log(\"A saltar: nenhum lote a aguardar motorista\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Recusa janela invertida (422)\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"Mensagem de erro\", () => pm.expect(pm.response.json().erro).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "perfil"
+              ]
+            },
+            "description": "Reenvia o perfil lido no `GET /estado` (variável `empresaPerfil`). Edite o corpo para testar alterações.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{empresaPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trocar plano",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/plano",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "plano"
+              ]
+            },
+            "description": "Troca o plano de subscrição (pequena | media | grande). O corpo usa o plano atual, por isso não muda nada.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plano\": \"{{plano}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar lote",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/{{loteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "{{loteId}}"
+              ]
+            },
+            "description": "Cancela um lote que ainda aguarda motorista. A linha não é apagada: o estado passa a `cancelado`."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"loteId\")) {",
+                  "  console.log(\"A saltar: nenhum lote a aguardar motorista\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Estado cancelado\", () => pm.expect(pm.response.json().estado).to.eql(\"cancelado\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar lote · já cancelado (erro)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/{{loteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "{{loteId}}"
+              ]
+            },
+            "description": "Caso de erro: o mesmo lote não pode ser cancelado duas vezes. Responde 409."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"loteId\")) {",
+                  "  console.log(\"A saltar: nenhum lote a aguardar motorista\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Conflito (409)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar lote · inexistente (erro)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "999999"
+              ]
+            },
+            "description": "Caso de erro: lote que não existe ou é de outra empresa. Responde 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Não encontrado (404)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 · ONG",
+      "description": "Rotas do painel da ONG (`/api/ong`).",
+      "item": [
+        {
+          "name": "Estado do painel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "estado"
+              ]
+            },
+            "description": "Perfil, doações a caminho, propostas disponíveis (`disp`), documentos e notificações. O teste guarda o perfil e a primeira proposta."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Tem ong e doações\", () => { pm.expect(j).to.have.property(\"ong\"); pm.expect(j.doacoes).to.be.an(\"array\"); });",
+                  "const o = j.ong;",
+                  "const perfil = {};",
+                  "[\"nome\",\"fantasia\",\"resp\",\"email\",\"tel\",\"familias\",\"capKg\",\"horaIni\",\"horaFim\",\"alvara\",\"cep\",\"rua\",\"num\",\"compl\",\"bairro\",\"cidade\",\"uf\"]",
+                  "  .forEach(k => perfil[k] = o[k]);",
+                  "perfil.categorias = o.categorias;",
+                  "perfil.camaraFria = o.camaraFria;",
+                  "pm.collectionVariables.set(\"ongPerfil\", JSON.stringify(perfil, null, 2));",
+                  "pm.collectionVariables.set(\"propostaId\", j.disp && j.disp.length ? j.disp[0].id : \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "perfil"
+              ]
+            },
+            "description": "Reenvia o perfil lido no `GET /estado` (variável `ongPerfil`).",
+            "body": {
+              "mode": "raw",
+              "raw": "{{ongPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recusar proposta",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/propostas/{{propostaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "propostas",
+                "{{propostaId}}"
+              ]
+            },
+            "description": "Recusa uma proposta de doação. A plataforma oferece o lote a outra ONG. O motivo é opcional.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Sem espaço na câmara fria hoje\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"propostaId\")) {",
+                  "  console.log(\"A saltar: nenhuma proposta disponível\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Recusada\", () => pm.expect(pm.response.json().recusada).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · Motorista",
+      "description": "Rotas do app do motorista (`/api/motorista`).",
+      "item": [
+        {
+          "name": "Estado do painel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "estado"
+              ]
+            },
+            "description": "Perfil, histórico, carteira e gráficos do motorista."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Tem motorista e histórico\", () => { pm.expect(j).to.have.property(\"motorista\"); pm.expect(j.historico).to.be.an(\"array\"); });",
+                  "const m = j.motorista, perfil = {};",
+                  "[\"nome\",\"email\",\"tel\",\"veiculo\",\"placa\",\"modelo\",\"cnh\",\"cat\",\"cnhValidade\",\"cep\",\"rua\",\"num\",\"bairro\",\"cidade\",\"uf\"]",
+                  "  .forEach(k => perfil[k] = m[k]);",
+                  "pm.collectionVariables.set(\"motoristaPerfil\", JSON.stringify(perfil, null, 2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrega em andamento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/entrega",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "entrega"
+              ]
+            },
+            "description": "A entrega ativa do motorista, ou `null`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tem a chave entrega\", () => pm.expect(pm.response.json()).to.have.property(\"entrega\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ofertas perto de mim",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/ofertas?lat=-23.5505&lon=-46.6333",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "ofertas"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-23.5505"
+                },
+                {
+                  "key": "lon",
+                  "value": "-46.6333"
+                }
+              ]
+            },
+            "description": "Lotes disponíveis no raio do motorista, a partir da posição enviada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ofertas · sem posição (erro)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/ofertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "ofertas"
+              ]
+            },
+            "description": "Caso de erro: sem `lat` e `lon` a API responde 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Posição obrigatória (422)\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar posição (GPS)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/posicao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "posicao"
+              ]
+            },
+            "description": "Atualiza a posição atual do motorista.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": -23.5505,\n  \"lon\": -46.6333,\n  \"accuracy\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "perfil"
+              ]
+            },
+            "description": "Reenvia o perfil lido no `GET /estado` (variável `motoristaPerfil`).",
+            "body": {
+              "mode": "raw",
+              "raw": "{{motoristaPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revogar consentimento de localização",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/consentimento",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "consentimento"
+              ]
+            },
+            "description": "Revoga o consentimento de localização (LGPD). Sem ele, o motorista não aceita entregas."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Consentimento removido\", () => pm.expect(pm.response.json().consentimento).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Conceder consentimento de localização",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/consentimento",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "consentimento"
+              ]
+            },
+            "description": "Volta a dar o consentimento (repõe o estado depois do pedido anterior).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conceder\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Consentimento dado\", () => pm.expect(pm.response.json().consentimento).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 · Administrador",
+      "description": "Rotas do painel do administrador (`/api/admin`).",
+      "item": [
+        {
+          "name": "Estado do painel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "estado"
+              ]
+            },
+            "description": "Utilizadores, operações em curso (mapa), ocorrências, auditoria e financeiro."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Tem utilizadores e operações\", () => { pm.expect(j.usuarios).to.be.an(\"array\"); pm.expect(j.ops).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 · Conta (todos os perfis)",
+      "description": "Rotas comuns a qualquer perfil autenticado (`/api/conta`).",
+      "item": [
+        {
+          "name": "Parâmetros da plataforma",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/plataforma",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "plataforma"
+              ]
+            },
+            "description": "Fretes, planos, raio, regras e metodologia de impacto."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tem raioKm\", () => pm.expect(pm.response.json().raioKm).to.be.a(\"number\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marcar notificações como lidas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/notificacoes/lidas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "notificacoes",
+                "lidas"
+              ]
+            },
+            "description": "Marca todas as notificações como lidas.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 · Segurança (casos de erro)",
+      "description": "Pedidos que a API deve recusar.",
+      "item": [
+        {
+          "name": "Sem token CSRF",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "token-falso",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "perfil"
+              ]
+            },
+            "description": "Escrita com token CSRF errado: a API recusa com 403, mesmo com sessão válida.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{empresaPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Recusa sem CSRF (403)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Método não permitido",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/plataforma",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "plataforma"
+              ]
+            },
+            "description": "A rota só aceita GET. Um PUT responde 405.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Método não permitido (405)\", () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rota inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/nao-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "nao-existe"
+              ]
+            },
+            "description": "Rota que não existe: 404 em JSON."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Não encontrado (404)\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erro em JSON\", () => pm.expect(pm.response.json().erro).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 · IoT (sensores)",
+      "description": "API dos sensores. Não usa sessão: o dispositivo envia a chave no cabeçalho `X-Sensor-Key` (variável `iotChave`; na demonstração vale `ongsave-iot-demo`). O script `iot/simulador_sensores.py` faz o mesmo em ciclo.",
+      "item": [
+        {
+          "name": "Listar sensores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/sensores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "sensores"
+              ]
+            },
+            "description": "Sensores ativos, última leitura e, nas balanças, o lote que está a ser preparado para a retirada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Lista os dois sensores\", () => pm.expect(j.length).to.eql(2));",
+                  "const b = Array.isArray(j) ? j.find(s => s.tipo === \"peso\") : null;",
+                  "pm.collectionVariables.set(\"pesagemLote\", b && b.loteId ? b.loteId : \"\");",
+                  "pm.collectionVariables.set(\"pesagemKg\", b && b.loteKg ? b.loteKg : \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leitura normal da câmara fria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "Temperatura dentro da faixa segura (2 a 8 °C).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"camara-fria-casa-esperanca\",\n  \"valor\": 4.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Sem alerta\", () => pm.expect(pm.response.json().alerta).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Câmara fria acima do limite (alerta)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "Temperatura acima de 8 °C: a leitura é gravada com alerta e a ONG recebe uma notificação.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"camara-fria-casa-esperanca\",\n  \"valor\": 9.4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Gera alerta\", () => pm.expect(pm.response.json().alerta).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Câmara fria volta ao normal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "Temperatura de volta à faixa segura.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"camara-fria-casa-esperanca\",\n  \"valor\": 5.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Sem alerta\", () => pm.expect(pm.response.json().alerta).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pesagem com divergência (alerta)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "A balança pesa o lote com 80 % do peso declarado. Passa da tolerância: avisa a empresa e a ONG de destino.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"balanca-doca-bom-preco\",\n  \"valor\": {{pesoDivergente}},\n  \"lote\": {{pesagemLote}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 80 % do peso declarado: diverge mais do que a tolerância (5 %)",
+                  "const kg = parseFloat(pm.collectionVariables.get(\"pesagemKg\") || \"0\");",
+                  "pm.collectionVariables.set(\"pesoDivergente\", (kg * 0.8).toFixed(1));",
+                  "if (!pm.collectionVariables.get(\"pesagemLote\")) {",
+                  "  console.log(\"A saltar: nenhum lote a aguardar retirada na empresa de demonstração\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Gera alerta de peso\", () => pm.expect(pm.response.json().alerta).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Histórico da câmara fria",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/sensores/camara-fria-casa-esperanca/leituras?limite=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "sensores",
+                "camara-fria-casa-esperanca",
+                "leituras"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "As últimas leituras do sensor, da mais recente para a mais antiga."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devolve uma lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sem chave do sensor (erro)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "Sem o cabeçalho `X-Sensor-Key`: 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"camara-fria-casa-esperanca\",\n  \"valor\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sem chave (401)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sensor inexistente (erro)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "Sensor que não está cadastrado: 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"nao-existe\",\n  \"valor\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Não encontrado (404)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Valor inválido (erro)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Sensor-Key",
+                "value": "{{iotChave}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/leituras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "iot",
+                "leituras"
+              ]
+            },
+            "description": "Valor que não é número: 422.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensor\": \"camara-fria-casa-esperanca\",\n  \"valor\": \"quente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Valor inválido (422)\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "99 · Outras rotas (referência, não rodar no Runner)",
+      "description": "Rotas que dependem de um lote, documento ou ocorrência numa fase específica, ou que alteram dados da demonstração. Estão aqui documentadas com exemplos de corpo; troque os ids e envie uma a uma.",
+      "item": [
+        {
+          "name": "Empresa · Cancelar lote (rota antiga)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/1/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "1",
+                "cancelar"
+              ]
+            },
+            "description": "Equivalente ao DELETE /lotes/{id}. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Empresa · Registar retirada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/lotes/1/retirada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "lotes",
+                "1",
+                "retirada"
+              ]
+            },
+            "description": "Regista o peso e a temperatura na retirada e gera o código para o motorista. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kg\": 20,\n  \"temp\": 4.5,\n  \"obs\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ONG · Aceitar proposta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/propostas/1/aceitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "propostas",
+                "1",
+                "aceitar"
+              ]
+            },
+            "description": "A ONG aceita a doação. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ONG · Gerar token de entrega",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/lotes/1/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "lotes",
+                "1",
+                "token"
+              ]
+            },
+            "description": "Gera o código que o motorista digita ao entregar. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ONG · Conferir recebimento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/lotes/1/conferencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "lotes",
+                "1",
+                "conferencia"
+              ]
+            },
+            "description": "Confere peso e condição. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kg\": 20,\n  \"cond\": \"ok\",\n  \"obs\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ONG · Reportar problema",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/lotes/1/reportar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "lotes",
+                "1",
+                "reportar"
+              ]
+            },
+            "description": "Abre uma ocorrência. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Caixas danificadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Motorista · Aceitar entrega",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/aceitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "aceitar"
+              ]
+            },
+            "description": "409 se outro motorista aceitou primeiro. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Motorista · Confirmar coleta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/coleta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "coleta"
+              ]
+            },
+            "description": "Código dado pela empresa + posição. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": -23.5614,\n  \"lon\": -46.656,\n  \"codigo\": \"ABC123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Motorista · Finalizar entrega (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/finalizar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "finalizar"
+              ]
+            },
+            "description": "Token da ONG + foto da descarga. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "token",
+                  "value": "123456",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "lat",
+                  "value": "-23.588",
+                  "type": "text"
+                },
+                {
+                  "key": "lon",
+                  "value": "-46.639",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Motorista · Sacar saldo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/sacar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "sacar"
+              ]
+            },
+            "description": "Pede o saque do saldo disponível. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valor\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Mudar status de utilizador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/1/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "1",
+                "status"
+              ]
+            },
+            "description": "ativo | bloqueado | ... *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ativo\",\n  \"motivo\": \"\",\n  \"obs\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Nota interna",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/1/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "1",
+                "notas"
+              ]
+            },
+            "description": "Adiciona uma nota ao utilizador. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Contactado por telefone.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Analisar documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/documentos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "documentos",
+                "1"
+              ]
+            },
+            "description": "ok | rejeitado. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ok\",\n  \"motivo\": \"\",\n  \"obs\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Resolver ocorrência",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/ocorrencias/1/resolver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "ocorrencias",
+                "1",
+                "resolver"
+              ]
+            },
+            "description": "Fecha a ocorrência e liberta o frete. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Resolvido com a ONG\",\n  \"obs\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Conta · Trocar senha",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/senha",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "senha"
+              ]
+            },
+            "description": "Troca a senha da conta autenticada. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atual\": \"senha-atual\",\n  \"nova\": \"nova-senha-forte\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

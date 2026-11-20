@@ -36,6 +36,8 @@ Empresas publicam o que sobrou, ONGs aceitam, motoristas parceiros recolhem e en
 - [Deploy](#-deploy)
 - [Segurança](#-segurança)
 - [API](#-api)
+- [Simulação de IoT](#-simulação-de-iot)
+- [Testes](#-testes)
 - [Estrutura do projeto](#-estrutura-do-projeto)
 - [Problemas comuns](#-problemas-comuns)
 - [Uso de inteligência artificial](#-uso-de-inteligência-artificial)
@@ -142,7 +144,7 @@ A página inicial tem o link **Ver demonstrativo** (`/demo`). Cada cartão entra
 | **Motorista** | Vê as ofertas no raio, compatíveis com o seu veículo · aceite atómico (só um motorista ganha) · rota ativa com GPS (só com consentimento LGPD) · confirma a coleta com o código da empresa e a entrega com token + foto · carteira com fretes retidos, liberados e saques |
 | **Admin** | Fila de aprovação de cadastros e documentos · suspende, bloqueia ou reativa contas com justificativa auditada · resolve ocorrências (liberar, ajustar ou estornar o frete) · mapa ao vivo de todas as entregas · financeiro (receita, fretes, reserva de liquidez) · parâmetros da plataforma |
 
-**Transversal:** notificações em tempo quase real, auditoria de todas as decisões sensíveis, retenção de dados (posições GPS apagadas após 90 dias), migrações de banco automáticas e modo simulação para apresentações.
+**Transversal:** notificações em tempo quase real, auditoria de todas as decisões sensíveis, retenção de dados (posições GPS apagadas após 90 dias), migrações de banco automáticas, modo simulação para apresentações e sensores IoT (câmara fria da ONG e balança da empresa) com alertas.
 
 ## 🔄 Fluxo de uma doação
 
@@ -236,6 +238,9 @@ erDiagram
     LOTES ||--o{ OCORRENCIAS : gera
     USUARIOS ||--o{ MOVIMENTOS : carteira
     USUARIOS ||--o{ FATURAS : "empresa paga"
+    USUARIOS ||--o{ SENSORES : "ONG ou empresa dona"
+    SENSORES ||--o{ LEITURAS_SENSORES : mede
+    LOTES ||--o{ LEITURAS_SENSORES : "pesado na balança"
 
     USUARIOS {
         bigserial id PK
@@ -266,6 +271,21 @@ erDiagram
         char token_hash "SHA-256, nunca o token"
         timestamptz expira_em
         timestamptz usado_em
+    }
+    SENSORES {
+        varchar id PK "ex.: camara-fria-casa-esperanca"
+        varchar tipo "temperatura | peso"
+        bigint usuario_id FK
+        numeric limite_min
+        numeric limite_max
+    }
+    LEITURAS_SENSORES {
+        bigserial id PK
+        varchar sensor_id FK
+        bigint lote_id FK "só na balança"
+        numeric valor
+        boolean alerta
+        varchar motivo
     }
 ```
 
@@ -427,6 +447,7 @@ Todas as rotas ficam sob `/api`, exigem sessão e o perfil certo e devolvem JSON
 | Motorista | `GET estado`, `ofertas?lat&lon`, `entrega` · `POST aceitar`, `coleta`, `posicao`, `finalizar`, `perfil`, `consentimento`, `sacar`, `contestar` · `PUT perfil`, `posicao` · `DELETE consentimento` |
 | ONG | `GET estado` · `POST propostas/{id}/aceitar\|recusar`, `lotes/{id}/token\|conferencia\|reportar`, `perfil` · `PUT perfil` · `DELETE propostas/{id}` |
 | Admin | `GET estado`, `documentos/{id}/arquivo` · `POST usuarios/{id}/status\|notas\|solicitar`, `documentos/{id}`, `ocorrencias/{id}/analisar\|resolver`, `plataforma` |
+| Sensores IoT | `GET sensores`, `sensores/{id}/leituras` · `POST leituras` (sem sessão: cabeçalho `X-Sensor-Key`) |
 
 ### Endpoints de atualização e remoção (PUT e DELETE)
 
@@ -451,15 +472,48 @@ Páginas: `/` · `/login` · `/cadastro` · `/recuperar-senha` · `/demo` · `/d
 
 ### Coleção do Postman
 
-A documentação executável da API está em [`docs/OngSave.postman_collection.json`](docs/OngSave.postman_collection.json): 45 pedidos com exemplos de corpo e testes automáticos de status e conteúdo.
+A documentação executável da API está em [`docs/OngSave.postman_collection.json`](docs/OngSave.postman_collection.json): 54 pedidos com exemplos de corpo e testes automáticos de status e conteúdo.
 
 1. No Postman, clique em **Import** e escolha o arquivo.
 2. Com o projeto a rodar (`app.demo=true`), ajuste a variável `baseUrl` se preciso (padrão: `http://localhost:8080/ongsave`).
 3. Rode a pasta **00 · Autenticação**. Ela entra nas contas de demonstração e guarda o cookie da sessão e o token CSRF.
-4. Rode as pastas **01 a 06** no **Runner** ou pedido a pedido. A pasta 06 tem os casos de erro (CSRF, método não permitido, rota inexistente).
+4. Rode as pastas **01 a 07** no **Runner** ou pedido a pedido. A pasta 06 tem os casos de erro (CSRF, método não permitido, rota inexistente) e a 07 testa os sensores IoT.
 5. No **Publicar lote**, selecione uma foto no campo `foto` antes de enviar.
 
 A pasta **99** documenta as rotas que dependem de um registo numa fase específica (por exemplo, confirmar a coleta). Elas não fazem parte do Runner.
+
+## 📟 Simulação de IoT
+
+Dois sensores simulados enviam leituras em JSON para a API. Cada leitura fica gravada em `leituras_sensores`. Quando passa do limite, a leitura é marcada como alerta e o dono do sensor recebe uma notificação no painel (sino).
+
+| Sensor | Mede | Alerta quando | Quem é avisado |
+|---|---|---|---|
+| `camara-fria-casa-esperanca` | Temperatura da câmara fria da ONG (°C) | Sai da faixa de 2 a 8 °C. Avisa uma vez ao entrar em alerta. | ONG |
+| `balanca-doca-bom-preco` | Peso do lote preparado para a retirada (kg) | Difere do peso declarado mais do que a tolerância da plataforma (5 %), ou passa da capacidade da balança | Empresa e ONG de destino |
+
+Os sensores não têm sessão: enviam a chave `iot.chave` no cabeçalho `X-Sensor-Key`. Na demonstração, a chave é `ongsave-iot-demo`; fora dela, a API IoT fica desligada até definir uma chave.
+
+```http
+POST /api/iot/leituras
+X-Sensor-Key: ongsave-iot-demo
+Content-Type: application/json
+
+{"sensor": "balanca-doca-bom-preco", "valor": 48.0, "lote": 8870}
+```
+
+**Para simular:** com o site a rodar, execute
+
+```bash
+python3 iot/simulador_sensores.py
+```
+
+O script faz o papel dos dois aparelhos. A meio da simulação, a "porta" da câmara fria fica aberta e a temperatura passa de 8 °C; uma das pesagens vem 20 % abaixo do declarado. Os alertas aparecem no terminal e no sino de notificações dos painéis da ONG e da empresa. Opções: `--leituras 60`, `--intervalo 2`, `--sem-alertas`, `--url`.
+
+As tabelas dos sensores são criadas pela migração `V005__sensores_iot.sql`, aplicada sozinha no próximo arranque.
+
+## 🧪 Testes
+
+O plano de testes está em [`docs/PLANO_DE_TESTES.md`](docs/PLANO_DE_TESTES.md): 22 casos, dos quais 12 de erro ou de segurança, cobrindo a API, a autenticação, a IoT e a interface. A coleção do Postman tem os testes automáticos de cada pedido.
 
 ## 📁 Estrutura do projeto
 
@@ -467,8 +521,9 @@ A pasta **99** documenta as rotas que dependem de um registo numa fase específi
 ongsave/
 ├─ .github/                 CI, CodeQL e Dependabot
 ├─ database/                ongsave_neon.sql (banco completo para colar no Neon) · consultas.sql (consultas de análise)
-├─ docs/                    OngSave.postman_collection.json (coleção da API)
+├─ docs/                    OngSave.postman_collection.json (coleção da API) · PLANO_DE_TESTES.md
 │  └─ screenshots/          imagens deste README
+├─ iot/                     simulador_sensores.py (sensores simulados) · exemplos de leitura em JSON
 ├─ src/main/java/br/com/ongsave/
 │  ├─ config/               Configuracao (ficheiro / variáveis de ambiente)
 │  ├─ controller/           FrontController (páginas, login, cadastro, recuperação, demo)
@@ -510,8 +565,9 @@ Usámos o **Claude (Anthropic)** como assistente de programação. Todo o códig
 | Parte do projeto | Como a IA ajudou |
 |---|---|
 | API REST | Implementação dos endpoints `PUT` e `DELETE` (empresa, ONG e motorista) seguindo as camadas já existentes (controller → service → DAO), e dos testes desses endpoints contra o banco. |
+| IoT | Tabelas dos sensores (migração V005), serviço de alertas, API `/api/iot` e script que simula os sensores. |
 | Front-end | Botão e formulário **Editar lote** no painel da empresa, e ligação dos botões existentes às novas rotas. |
-| Documentação | Coleção do Postman, consultas SQL de análise e seções deste README (ODS, consultas, API). |
+| Documentação e testes | Coleção do Postman, consultas SQL de análise, plano de testes, seções deste README e o PDF da entrega. |
 | Capturas de tela | Script que tira as capturas do README com o Chrome em modo headless. |
 
 O enunciado, a ideia do produto, as regras de negócio e as decisões finais são da equipa.

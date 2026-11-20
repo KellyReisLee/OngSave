@@ -73,3 +73,9 @@ sim.frota=2
 sim.intervaloMs=3000
 # Motoristas conduzidos à mão na apresentação (separe por vírgula). Os outros motoristas ativos são automáticos.
 sim.contasManuais=motorista@ongsave.com
+
+# --- Sensores IoT (simulados) ------------------------------------------
+# Chave que os sensores enviam no cabeçalho X-Sensor-Key (POST /api/iot/leituras).
+# Com app.demo=true, se ficar vazia, vale "ongsave-iot-demo". Fora da demonstração,
+# a API IoT fica desligada (503) até definir uma chave longa e aleatória aqui.
+# iot.chave=

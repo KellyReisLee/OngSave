@@ -11,6 +11,7 @@ import br.com.ongsave.service.MotoristaService;
 import br.com.ongsave.service.NotificacaoService;
 import br.com.ongsave.service.OngService;
 import br.com.ongsave.service.PlataformaService;
+import br.com.ongsave.service.SensorService;
 import br.com.ongsave.service.Simulador;
 import jakarta.servlet.ServletContext;
 
@@ -29,6 +30,7 @@ public final class Servicos {
     public final OngService ong;
     public final AdminService admin;
     public final EmailService emails;
+    public final SensorService sensores;
     /** {@code null} quando app.simulacao=false. */
     public final Simulador simulador;
 
@@ -43,6 +45,7 @@ public final class Servicos {
         ong = new OngService(plataforma, notificacoes, auditoria, geo, config.geoValidar(), config.simulacao());
         admin = new AdminService(plataforma, notificacoes, auditoria);
         emails = new EmailService(config.mailBrevoApiKey(), config.mailRemetente(), config.mailNomeRemetente());
+        sensores = new SensorService(plataforma, notificacoes, auditoria);
         simulador = config.simulacao()
                 ? new Simulador(empresa, motorista, ong, config.simSegundosTrecho(), config.simFrota(), config.simContasManuais())
                 : null;

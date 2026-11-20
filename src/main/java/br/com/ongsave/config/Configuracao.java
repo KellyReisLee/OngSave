@@ -191,6 +191,12 @@ public final class Configuracao {
     /** Intervalo de atualização dos painéis no modo simulação (ms). */
     public int simIntervaloMs() { return Math.max(1500, inteiro("sim.intervaloMs", 3000)); }
 
+    /**
+     * Chave que os sensores IoT enviam no cabeçalho X-Sensor-Key (POST /api/iot/leituras).
+     * Na demonstração vale "ongsave-iot-demo"; fora dela, a API IoT fica desligada até definir iot.chave.
+     */
+    public String iotChave() { return texto("iot.chave", demo() ? "ongsave-iot-demo" : ""); }
+
     /** E-mails dos motoristas conduzidos pelo apresentador (os restantes são automáticos). */
     public java.util.Set<String> simContasManuais() {
         java.util.Set<String> r = new java.util.HashSet<>();
