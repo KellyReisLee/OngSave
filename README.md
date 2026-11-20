@@ -15,6 +15,8 @@ Empresas publicam o que sobrou, ONGs aceitam, motoristas parceiros recolhem e en
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-pronto-2496ED?logo=docker&logoColor=white)
 
+**🎥 Vídeo pitch: [assistir](LINK_DO_VIDEO_PITCH)**
+
 [Demonstração](#-demonstração) · [Funcionalidades](#-funcionalidades) · [Arquitetura](#-arquitetura) · [Como executar](#-como-executar) · [Segurança](#-segurança) · [API](#-api)
 
 </div>
@@ -65,6 +67,8 @@ O OngSave contribui diretamente para três ODS da Agenda 2030 da ONU:
 Também se relaciona com a meta 12.3 (reduzir pela metade o desperdício de alimentos), do ODS 12.
 
 ## 🎬 Demonstração
+
+**Vídeo pitch (até 3 min):** LINK_DO_VIDEO_PITCH
 
 A página inicial tem o link **Ver demonstrativo** (`/demo`). Cada cartão entra sem senha no painel de um perfil, e os quatro podem ficar abertos ao mesmo tempo em abas do mesmo navegador. Com a simulação ligada, uma pequena frota publica, recolhe e entrega lotes sozinha: os KPIs, os mapas e a carteira mudam a cada poucos segundos.
 
@@ -180,7 +184,7 @@ sequenceDiagram
 
 ## 🏛 Arquitetura
 
-MVC clássico em Jakarta EE, sem frameworks: um controlador frontal para as páginas, APIs JSON para as ações de cada perfil, serviços com as regras de negócio e DAOs com todo o SQL.
+MVC clássico em Jakarta EE, sem frameworks: um controlador frontal para as páginas, APIs JSON para as ações de cada perfil, serviços com as regras de negócio e DAOs com todo o SQL. As três camadas pedidas para a API são **Controller** (`web/api/*Api.java`), **Service** (`service/*Service.java`) e **Repository** (`dao/*DAO.java`, o padrão DAO).
 
 ```mermaid
 flowchart LR
@@ -223,73 +227,157 @@ flowchart LR
 
 ```mermaid
 erDiagram
-    USUARIOS ||--o| EMPRESAS : "perfil empresa"
-    USUARIOS ||--o| MOTORISTAS : "perfil motorista"
-    USUARIOS ||--o| ONGS : "perfil ong"
+    USUARIOS ||--o| EMPRESAS : "é (perfil)"
+    USUARIOS ||--o| ONGS : "é (perfil)"
+    USUARIOS ||--o| MOTORISTAS : "é (perfil)"
     USUARIOS ||--o{ DOCUMENTOS : envia
     USUARIOS ||--o{ NOTIFICACOES : recebe
-    USUARIOS ||--o{ SENHA_TOKENS : "recuperação"
-    USUARIOS ||--o{ LOTES : "empresa publica"
-    USUARIOS ||--o{ LOTES : "ong recebe"
-    USUARIOS ||--o{ LOTES : "motorista leva"
-    LOTES ||--o{ POSICOES : rastreio
-    LOTES ||--o{ LOTE_RECUSAS : "recusado por"
-    LOTES ||--o| MOVIMENTOS : frete
-    LOTES ||--o{ OCORRENCIAS : gera
-    USUARIOS ||--o{ MOVIMENTOS : carteira
+    USUARIOS ||--o{ SENHA_TOKENS : "pede recuperação"
     USUARIOS ||--o{ FATURAS : "empresa paga"
-    USUARIOS ||--o{ SENSORES : "ONG ou empresa dona"
+    USUARIOS ||--o{ LOTES : "empresa publica"
+    USUARIOS |o--o{ LOTES : "ONG recebe"
+    USUARIOS |o--o{ LOTES : "motorista transporta"
+    USUARIOS ||--o{ LOTE_RECUSAS : "ONG recusa"
+    LOTES ||--o{ LOTE_RECUSAS : "é recusado"
+    USUARIOS ||--o{ POSICOES : "motorista envia"
+    LOTES ||--o{ POSICOES : rastreio
+    USUARIOS ||--o{ MOVIMENTOS : "carteira do motorista"
+    LOTES |o--o{ MOVIMENTOS : "gera frete e ajustes"
+    LOTES |o--o{ OCORRENCIAS : gera
+    USUARIOS |o--o{ OCORRENCIAS : abre
+    USUARIOS ||--o{ NOTAS_ADMIN : "é anotado"
+    USUARIOS |o--o{ NOTAS_ADMIN : escreve
+    USUARIOS |o--o{ AUDITORIA : "executa ação"
+    USUARIOS ||--o{ SENSORES : "é dono"
     SENSORES ||--o{ LEITURAS_SENSORES : mede
-    LOTES ||--o{ LEITURAS_SENSORES : "pesado na balança"
+    LOTES |o--o{ LEITURAS_SENSORES : "é pesado"
 
     USUARIOS {
         bigserial id PK
-        varchar perfil "empresa | motorista | ong | admin"
+        varchar nome
         varchar email UK
         varchar senha_hash "PBKDF2-SHA256"
+        varchar perfil "empresa | ong | motorista | admin"
         varchar status "pendente | ativo | suspenso | bloqueado | rejeitado"
+    }
+    EMPRESAS {
+        bigint usuario_id PK, FK
+        varchar plano "pequena | media | grande"
+        numeric custo_descarte
+        varchar cidade
+    }
+    ONGS {
+        bigint usuario_id PK, FK
+        numeric capacidade_kg
+        boolean camara_fria
+        varchar_array categorias
+    }
+    MOTORISTAS {
+        bigint usuario_id PK, FK
+        varchar veiculo "carro | van | cam"
+        varchar placa
+        date cnh_validade
+        timestamptz consentimento_em "LGPD"
+    }
+    DOCUMENTOS {
+        bigserial id PK
+        bigint usuario_id FK
+        varchar nome "UK com usuario_id"
+        varchar status
+    }
+    NOTIFICACOES {
+        bigserial id PK
+        bigint usuario_id FK
+        varchar texto
+        boolean lida
+    }
+    SENHA_TOKENS {
+        bigserial id PK
+        bigint usuario_id FK
+        char token_hash UK "SHA-256, nunca o token"
+        timestamptz expira_em
+    }
+    FATURAS {
+        bigserial id PK
+        bigint empresa_id FK
+        date referencia "UK com empresa_id"
+        numeric valor
+        varchar status
     }
     LOTES {
         bigserial id PK
         bigint empresa_id FK
-        bigint ong_id FK
-        bigint motorista_id FK
+        bigint ong_id FK "opcional"
+        bigint motorista_id FK "opcional"
+        varchar categoria
         numeric peso_kg
         varchar estado "aguardando | aceito | transito | entregue | cancelado"
-        varchar retirada_codigo
-        varchar token_codigo
         numeric frete
+    }
+    LOTE_RECUSAS {
+        bigint lote_id PK, FK
+        bigint ong_id PK, FK
+        timestamptz criado_em
+    }
+    POSICOES {
+        bigserial id PK
+        bigint lote_id FK
+        bigint motorista_id FK
+        float lat
+        float lon
     }
     MOVIMENTOS {
         bigserial id PK
+        bigint motorista_id FK
+        bigint lote_id FK "opcional; 1 frete por lote"
         varchar tipo "frete | saque | ajuste"
         numeric valor
-        varchar status "disponivel | retido | estornado | solicitado | pago"
+        varchar status
     }
-    SENHA_TOKENS {
+    OCORRENCIAS {
         bigserial id PK
-        char token_hash "SHA-256, nunca o token"
-        timestamptz expira_em
-        timestamptz usado_em
+        bigint lote_id FK "opcional"
+        bigint autor_id FK "opcional"
+        varchar tipo
+        varchar status
+    }
+    NOTAS_ADMIN {
+        bigserial id PK
+        bigint usuario_id FK
+        bigint autor_id FK "opcional"
+        varchar texto
+    }
+    AUDITORIA {
+        bigserial id PK
+        bigint ator_id FK "opcional"
+        varchar acao
+        varchar alvo
     }
     SENSORES {
         varchar id PK "ex.: camara-fria-casa-esperanca"
-        varchar tipo "temperatura | peso"
         bigint usuario_id FK
+        varchar tipo "temperatura | peso"
         numeric limite_min
         numeric limite_max
     }
     LEITURAS_SENSORES {
         bigserial id PK
         varchar sensor_id FK
-        bigint lote_id FK "só na balança"
+        bigint lote_id FK "opcional; só na balança"
         numeric valor
         boolean alerta
-        varchar motivo
+    }
+    PLATAFORMA_CONFIG {
+        smallint id PK
+        jsonb dados "raio, fretes, planos, regras"
+    }
+    SCHEMA_VERSAO {
+        int versao PK
+        varchar descricao
     }
 ```
 
-Tabelas também presentes: `plataforma_config` (parâmetros em JSONB editados pelo admin), `notas_admin`, `auditoria` e `schema_versao` (controlo das migrações).
+Notação pé-de-galinha: `||` exatamente um, `|o` zero ou um, `o{` zero ou muitos. Uma FK "opcional" aceita vazio (por exemplo, um lote ainda sem ONG ou motorista). `LOTE_RECUSAS` é a tabela associativa N:N entre lotes e ONGs. `PLATAFORMA_CONFIG` (parâmetros em JSONB editados pelo admin) e `SCHEMA_VERSAO` (controlo das migrações) são tabelas de sistema, sem relações.
 
 ### Consultas de análise
 
@@ -472,7 +560,7 @@ Páginas: `/` · `/login` · `/cadastro` · `/recuperar-senha` · `/demo` · `/d
 
 ### Coleção do Postman
 
-A documentação executável da API está em [`docs/OngSave.postman_collection.json`](docs/OngSave.postman_collection.json): 54 pedidos com exemplos de corpo e testes automáticos de status e conteúdo.
+A documentação executável da API está em [`docs/OngSave.postman_collection.json`](docs/OngSave.postman_collection.json): 67 pedidos, que cobrem as 50 rotas da API, com exemplos de corpo e testes automáticos de status e conteúdo.
 
 1. No Postman, clique em **Import** e escolha o arquivo.
 2. Com o projeto a rodar (`app.demo=true`), ajuste a variável `baseUrl` se preciso (padrão: `http://localhost:8080/ongsave`).
@@ -480,7 +568,7 @@ A documentação executável da API está em [`docs/OngSave.postman_collection.j
 4. Rode as pastas **01 a 07** no **Runner** ou pedido a pedido. A pasta 06 tem os casos de erro (CSRF, método não permitido, rota inexistente) e a 07 testa os sensores IoT.
 5. No **Publicar lote**, selecione uma foto no campo `foto` antes de enviar.
 
-A pasta **99** documenta as rotas que dependem de um registo numa fase específica (por exemplo, confirmar a coleta). Elas não fazem parte do Runner.
+A pasta **99** documenta as outras rotas: as que dependem de um registo numa fase específica (por exemplo, confirmar a coleta) e as versões POST equivalentes às rotas PUT e DELETE. Elas não fazem parte do Runner.
 
 ## 📟 Simulação de IoT
 

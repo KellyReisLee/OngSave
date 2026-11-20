@@ -2553,6 +2553,462 @@
               }
             }
           }
+        },
+        {
+          "name": "Conta · Foto do lote",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/fotos/lote/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "fotos",
+                "lote",
+                "1"
+              ]
+            },
+            "description": "Devolve a foto (imagem) publicada pela empresa no lote. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*"
+          }
+        },
+        {
+          "name": "Conta · Foto da entrega",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/fotos/entrega/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "fotos",
+                "entrega",
+                "1"
+              ]
+            },
+            "description": "Devolve a foto (imagem) da descarga enviada pelo motorista. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*"
+          }
+        },
+        {
+          "name": "Conta · Enviar documento (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conta/documentos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "conta",
+                "documentos",
+                "1"
+              ]
+            },
+            "description": "Envia o arquivo de um documento pedido no cadastro (PDF, PNG ou JPG até 5 MB). *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "arquivo",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Empresa · Atualizar perfil (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/empresa/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empresa",
+                "perfil"
+              ]
+            },
+            "description": "Mesmo efeito do PUT /perfil; é a rota usada pelo formulário. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{{empresaPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ONG · Recusar proposta (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/propostas/1/recusar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "propostas",
+                "1",
+                "recusar"
+              ]
+            },
+            "description": "Mesmo efeito do DELETE /propostas/{id}. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Sem espaço na câmara fria hoje\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ONG · Atualizar perfil (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ong/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ong",
+                "perfil"
+              ]
+            },
+            "description": "Mesmo efeito do PUT /perfil. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{{ongPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Motorista · Enviar posição (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/posicao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "posicao"
+              ]
+            },
+            "description": "Mesmo efeito do PUT /posicao. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": -23.5505,\n  \"lon\": -46.6333,\n  \"accuracy\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Motorista · Atualizar perfil (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "perfil"
+              ]
+            },
+            "description": "Mesmo efeito do PUT /perfil. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{{motoristaPerfil}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Motorista · Contestar desconto ou retenção",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/motorista/contestar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "motorista",
+                "contestar"
+              ]
+            },
+            "description": "Abre uma contestação sobre a carteira (frete retido ou desconto). *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"O frete do lote 1 ficou retido sem motivo.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Arquivo de documento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/documentos/1/arquivo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "documentos",
+                "1",
+                "arquivo"
+              ]
+            },
+            "description": "Descarrega o arquivo de um documento enviado no cadastro. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*"
+          }
+        },
+        {
+          "name": "Admin · Pedir documento ao utilizador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/1/solicitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "1",
+                "solicitar"
+              ]
+            },
+            "description": "Pede um documento em falta ao utilizador. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"Alvará de funcionamento\",\n  \"obs\": \"Envie a versão atualizada.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Colocar ocorrência em análise",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/ocorrencias/1/analisar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "ocorrencias",
+                "1",
+                "analisar"
+              ]
+            },
+            "description": "Marca a ocorrência como em análise. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Admin · Atualizar parâmetros da plataforma",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/plataforma",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "plataforma"
+              ]
+            },
+            "description": "Grava os parâmetros (raio, fretes, planos, regras, metodologia). Envie o objeto completo devolvido por GET /api/conta/plataforma, com os valores alterados. *(Referência: precisa de um registo na fase certa; ajuste o id antes de enviar.)*",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"raioKm\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ]
     }
