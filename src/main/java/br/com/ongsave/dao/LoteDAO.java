@@ -3,6 +3,7 @@ package br.com.ongsave.dao;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -93,6 +94,13 @@ public class LoteDAO {
 
     public void cancelar(Connection c, long id) throws SQLException {
         Sql.executar(c, "UPDATE lotes SET estado = 'cancelado', cancelado_em = now() WHERE id = ?", id);
+    }
+
+    /** Atualiza os dados editáveis de um lote (só enquanto aguarda motorista: a condição fica também no SQL). */
+    public int atualizarDados(Connection c, long id, int volumes, LocalTime janelaInicio, LocalTime janelaFim, String observacao) throws SQLException {
+        return Sql.executar(c, """
+                UPDATE lotes SET volumes = ?, janela_inicio = ?, janela_fim = ?, observacao = ?
+                WHERE id = ? AND estado = 'aguardando'""", volumes, janelaInicio, janelaFim, observacao, id);
     }
 
     public void cancelarSeAguardando(Connection c, long id) throws SQLException {

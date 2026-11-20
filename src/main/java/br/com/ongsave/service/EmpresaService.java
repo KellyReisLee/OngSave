@@ -237,6 +237,46 @@ public class EmpresaService {
         });
     }
 
+    /** Campos que a empresa pode alterar num lote já publicado (null = mantém o valor atual). */
+    public record EdicaoLote(String vol, String j1, String j2, String obs) {}
+
+    /**
+     * Edita um lote enquanto ainda aguarda motorista. Peso, categoria, conservação e veículo não mudam
+     * porque a ONG já foi escolhida com base neles; para isso, cancele e publique de novo.
+     */
+    public Map<String, Object> editar(Usuario u, long loteId, EdicaoLote d) {
+        if (d.vol() == null && d.j1() == null && d.j2() == null && d.obs() == null)
+            throw ErroNegocio.invalido("Envie pelo menos um campo para alterar: vol, j1, j2 ou obs.");
+        return Banco.transacao(c -> {
+            Lote l = lotes.buscarPorId(c, loteId, true);
+            if (l == null || l.getEmpresaId() != u.getId()) throw ErroNegocio.naoEncontrado("Lote não encontrado.");
+            if (!"aguardando".equals(l.getEstado()))
+                throw ErroNegocio.conflito("Só é possível editar lotes que ainda aguardam motorista.");
+
+            int vol = l.getVolumes();
+            if (d.vol() != null) {
+                vol = (int) numero(d.vol(), "Informe a quantidade de volumes.");
+                if (vol < 1 || vol > 5_000) throw ErroNegocio.invalido("Informe entre 1 e 5.000 volumes.");
+            }
+            LocalTime j1 = d.j1() != null ? hora(d.j1()) : l.getJanelaInicio();
+            LocalTime j2 = d.j2() != null ? hora(d.j2()) : l.getJanelaFim();
+            if (j1 != null && j2 != null && !j1.isBefore(j2)) throw ErroNegocio.invalido("O início da janela deve ser antes do fim.");
+            String obs = l.getObservacao();
+            if (d.obs() != null) {
+                obs = d.obs().trim();
+                if (obs.length() > 500) throw ErroNegocio.invalido("As instruções passam de 500 caracteres.");
+                if (obs.isEmpty()) obs = null;
+            }
+
+            lotes.atualizarDados(c, loteId, vol, j1, j2, obs);
+            if (l.getOngId() != null)
+                notificacoes.notificar(c, l.getOngId(), "A empresa " + u.getNome() + " atualizou os dados do lote #" + loteId + ".", "fa-pen");
+            auditoria.registrar(c, u, "Editou o lote", "#" + loteId, loteId, null);
+            return Json.obj("id", loteId, "volumes", vol,
+                    "j1", j1 == null ? null : j1.toString(), "j2", j2 == null ? null : j2.toString(), "obs", obs);
+        });
+    }
+
     /** A empresa confere o que o motorista está a levar e recebe o código que o motorista digita no app. */
     public Map<String, Object> registrarRetirada(Usuario u, long loteId, String kgTxt, String tempTxt, String obs) {
         return Banco.transacao(c -> {

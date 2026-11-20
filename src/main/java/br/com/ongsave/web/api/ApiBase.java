@@ -31,7 +31,7 @@ import jakarta.servlet.http.Part;
  * Base de todas as APIs JSON ({@code /api/...}).
  * <ul>
  *   <li>exige sessão iniciada (401) e o perfil certo (403);</li>
- *   <li>valida o token CSRF em todo POST (cabeçalho {@code X-CSRF-Token} ou campo {@code csrf});</li>
+ *   <li>valida o token CSRF em todo POST, PUT e DELETE (cabeçalho {@code X-CSRF-Token} ou campo {@code csrf});</li>
  *   <li>revalida a situação da conta a cada minuto: contas suspensas perdem a sessão na hora;</li>
  *   <li>converte {@link ErroNegocio} em status HTTP + {@code {"erro": "..."}} e esconde erros internos.</li>
  * </ul>
@@ -54,17 +54,34 @@ public abstract class ApiBase extends HttpServlet {
 
     protected Object post(Pedido p) throws IOException, ServletException { throw ErroNegocio.naoEncontrado("Recurso não encontrado."); }
 
+    /** PUT: atualiza um recurso que já existe. Corpo em JSON. Sem implementação na subclasse = 405. */
+    protected Object put(Pedido p) throws IOException, ServletException { throw new ErroNegocio(405, "Método não permitido para este recurso."); }
+
+    /** DELETE: remove (ou cancela) um recurso. Sem implementação na subclasse = 405. */
+    protected Object delete(Pedido p) throws IOException, ServletException { throw new ErroNegocio(405, "Método não permitido para este recurso."); }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        tratar(req, resp, false);
+        tratar(req, resp, "GET");
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        tratar(req, resp, true);
+        tratar(req, resp, "POST");
     }
 
-    private void tratar(HttpServletRequest req, HttpServletResponse resp, boolean escrita) throws IOException {
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        tratar(req, resp, "PUT");
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        tratar(req, resp, "DELETE");
+    }
+
+    private void tratar(HttpServletRequest req, HttpServletResponse resp, String metodo) throws IOException {
+        boolean escrita = !"GET".equals(metodo);
         resp.setHeader("Cache-Control", "no-store");
         try {
             Servicos s = Servicos.de(getServletContext());
@@ -84,7 +101,12 @@ public abstract class ApiBase extends HttpServlet {
 
             Pedido p = new Pedido(req, resp, u, s);
             p.demo = sessao.getAttribute(br.com.ongsave.web.DemoFilter.CONTAS) != null;
-            Object r = escrita ? post(p) : get(p);
+            Object r = switch (metodo) {
+                case "POST" -> post(p);
+                case "PUT" -> put(p);
+                case "DELETE" -> delete(p);
+                default -> get(p);
+            };
             if (r instanceof Arquivo a) { enviarArquivo(resp, a); return; }
             responder(resp, 200, r == null ? Json.obj("ok", true) : r);
         } catch (ErroNegocio e) {
@@ -161,7 +183,8 @@ public abstract class ApiBase extends HttpServlet {
             if (info != null) for (String seg : info.split("/")) if (!seg.isEmpty()) r.add(seg);
             this.rota = List.copyOf(r);
             String ct = req.getContentType();
-            if ("POST".equals(req.getMethod()) && ct != null && ct.toLowerCase().startsWith("application/json")) {
+            // POST, PUT e DELETE aceitam corpo JSON (o Tomcat só lê formulários no POST, por isso o PUT usa JSON).
+            if (!"GET".equals(req.getMethod()) && ct != null && ct.toLowerCase().startsWith("application/json")) {
                 String corpo = new String(lerLimitado(req.getInputStream(), JSON_MAX), StandardCharsets.UTF_8);
                 json = corpo.isBlank() ? Map.of() : Json.lerObjeto(corpo);
             }
